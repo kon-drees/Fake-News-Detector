@@ -1,3 +1,4 @@
+import datetime
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 
@@ -12,7 +13,7 @@ class HighlightTokenSchema(BaseModel):
     score: float
 
 class PredictionResponse(BaseModel):
-    text: str
+    label: str
     probabilities: Dict[str, float]
     highlights: Optional[List[HighlightTokenSchema]]
-
+    meta: Optional[dict] = None
