@@ -1,7 +1,14 @@
 from fastapi import FastAPI
-from .api.routes_predict import router as predict_router
+from app.api.routes_predict import router as predict_router
+
 app = FastAPI(title="Fake News Backend")
 app.include_router(predict_router, prefix="/api")
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 if __name__ == "__main__":
     import uvicorn
