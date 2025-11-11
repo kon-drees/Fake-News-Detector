@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
 
 @dataclass
@@ -20,5 +20,12 @@ class HighlightToken:
     end: int
     score: float
 
+
+@dataclass
+class TrainingArticle:
+    dataset: str
+    title: Optional[str]
+    text: str
+    label: int
 
 
