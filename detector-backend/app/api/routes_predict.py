@@ -1,12 +1,17 @@
-from fastapi import FastAPI
+from fastapi import APIRouter
+from ..schemas import PredictionResponse
 
-app = FastAPI()
-
-@app.get("/predict")
-def health():
-    return {"status": "ok"}
+router = APIRouter()
 
 
-@app.get("/highlight")
-def health():
+@router.get("/predict", response_model=PredictionResponse)
+def predict():
+    return PredictionResponse(
+        label="fake",
+        probabilities={"fake": 0.8, "real": 0.2},
+    )
+
+
+@router.get("/highlight")
+def highlight():
     return {"status": "ok"}
