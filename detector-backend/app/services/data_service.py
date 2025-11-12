@@ -6,6 +6,7 @@ import pandas as pd
 
 from app.db import get_articles_collection
 from app.domain import TrainingArticle
+from app.domain import Label
 
 RE_NEWSWIRE_PREFIX = re.compile(
     r"""^                      
@@ -48,13 +49,13 @@ def import_welfake_to_mongo():
         if not isinstance(title, str):
             title = None
 
-        label = int(row.get("label", 0))
+        label = Label(int(row.get("label", 0)))
 
         sample = TrainingArticle(
             dataset="welfake",
             title=title,
             text=clean_text,
-            label=label,
+            label=label.value
         )
         docs.append(asdict(sample))
 

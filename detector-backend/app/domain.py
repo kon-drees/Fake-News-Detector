@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, Optional
 
 
@@ -20,12 +21,15 @@ class HighlightToken:
     end: int
     score: float
 
+class Label(Enum):
+    REAL = 0
+    FAKE = 1
 
 @dataclass
 class TrainingArticle:
     dataset: str
     title: Optional[str]
     text: str
-    label: int
+    label: Label
 
 
