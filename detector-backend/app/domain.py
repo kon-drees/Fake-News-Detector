@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from typing import Dict, Optional
 
@@ -21,9 +22,20 @@ class HighlightToken:
     end: int
     score: float
 
-class Label(Enum):
-    REAL = 0
-    FAKE = 1
+
+class Label(str, Enum):
+    FAKE = "fake"
+    REAL = "real"
+
+    @classmethod
+    def from_number(cls, value: int):
+        if value == 0:
+            return cls.FAKE
+        elif value == 1:
+            return cls.REAL
+        else:
+            raise ValueError(f"Invalid value for Label: {value}")
+
 
 @dataclass
 class TrainingArticle:
@@ -31,5 +43,5 @@ class TrainingArticle:
     title: Optional[str]
     text: str
     label: Label
-
-
+    source: Optional[str]
+    publish_date: Optional[datetime]
