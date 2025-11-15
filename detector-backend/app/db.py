@@ -1,12 +1,25 @@
 from pymongo import MongoClient
-from app.core.config import get_settings
+from pymongo.synchronous.collection import Collection
 
-settings = get_settings()
+from app.core.config import Settings
 
-def get_client() -> MongoClient:
-    return MongoClient(settings.MONGO_URL)
 
-def get_articles_collection():
-    client = get_client()
-    db = client[settings.MONGO_DB_NAME]
-    return db["articles"]
+class Database:
+    _client: MongoClient = None
+
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+
+    def _get_client(self) -> MongoClient:
+        if self._client is None:
+            self._client = MongoClient(self.settings.MONGO_URL)
+
+        return self._client
+
+    def get_articles_collection(self) -> Collection:
+        db = self._get_client()[self.settings.MONGO_DB_NAME]
+
+        return db["articles"]
+
+    def close(self) -> None:
+        self._client.close()
