@@ -29,20 +29,14 @@ class GermanFakeNCPipeline(BaseDataPipeline):
 
         df["title"] = df["title"].astype(str)
         df.loc[df["title"].str.strip() == "", "title"] = pd.NA
-
         df["publish_date"] = pd.to_datetime(df["publish_date"], errors="coerce")
         df["publish_date"] = df["publish_date"].dt.strftime("%Y-%m-%d")
         df["publish_date"] = df["publish_date"].fillna("")
-
         df = df.dropna(subset=["text", "label"]).drop_duplicates(subset=["text"])
-
         df["language"] = "de"
-
         df["label"] = df["label"].astype(str)
-
         if "source" in df.columns:
             df["source"] = df["source"].fillna("")
-
         df = df[["title", "text", "label", "source", "publish_date", "language"]]
 
         return df

@@ -3,8 +3,8 @@ import re
 import pandas as pd
 
 from app.core.config import Settings
-from app.pipelines.base_pipeline import BaseDataPipeline
 from app.domain import Label
+from app.pipelines.base_pipeline import BaseDataPipeline
 
 settings = Settings()
 
@@ -24,27 +24,27 @@ class WelfakePipeline(BaseDataPipeline):
 
     def _load_data(self) -> pd.DataFrame:
         csv_path = (
-            settings.BASE_DIR.parent
-            / "rawdata"
-            / "WELFake_Dataset"
-            / "WELFake_Dataset.csv"
+                settings.BASE_DIR.parent
+                / "rawdata"
+                / "WELFake_Dataset"
+                / "WELFake_Dataset.csv"
         )
 
         return pd.read_csv(csv_path, index_col=0)
 
-    def _run_processing(self, df: pd.DataFrame) -> pd.DataFrame | None:
+    def _run_processing(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
-
         df["text"] = (
             df["text"]
+            .astype(str)
             .str.strip()
             .str.replace(self.RE_NEWSWIRE_PREFIX, "", regex=True)
             .str.replace(r"\s+", " ", regex=True)
         )
-        df.loc[df["title"] == "", "title"] = pd.NA
-
+        df["title"] = df["title"].astype(str)
+        df.loc[df["title"].str.strip() == "", "title"] = pd.NA
         df = df.dropna(subset=["text", "label"]).drop_duplicates(subset=["text"])
-
-        df["label"] = df["label"].apply(lambda label: Label.from_number(label))
-
+        df["label"] = df["label"].apply(lambda label: Label.from_number(label).value)
+        df["language"] = df["text"].apply(self.lang_service.detect_code)
+        df = df[df["language"] == "en"]
         return df
