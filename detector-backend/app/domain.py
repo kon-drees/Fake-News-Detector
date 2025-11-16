@@ -37,6 +37,18 @@ class Label(str, Enum):
             raise ValueError(f"Invalid value for Label: {value}")
 
 
+class Language(str, Enum):
+    DE = "de"
+    EN = "en"
+
+
+@dataclass
+class ScrapedArticle:
+    url: str
+    title: Optional[str]
+    text: Optional[str]
+
+
 @dataclass
 class TrainingArticle:
     dataset: str
@@ -45,3 +57,5 @@ class TrainingArticle:
     label: Label
     source: Optional[str]
     publish_date: Optional[datetime]
+    language: Language
+
