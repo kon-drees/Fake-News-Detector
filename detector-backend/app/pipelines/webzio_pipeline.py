@@ -1,12 +1,11 @@
 import json
 import os
 
-from lingua import LanguageDetectorBuilder
 import pandas as pd
 
 from app.core.config import Settings
-from app.pipelines.base_pipeline import BaseDataPipeline
 from app.domain import Label
+from app.pipelines.base_pipeline import BaseDataPipeline
 
 settings = Settings()
 
@@ -18,7 +17,7 @@ class WebzioPipeline(BaseDataPipeline):
         texts = []
         publish_dates = []
         for root, dirs, files in os.walk(
-            settings.BASE_DIR.parent / "rawdata" / "webz_io_Dataset"
+                settings.BASE_DIR.parent / "rawdata" / "webz_io_Dataset"
         ):
             for file in files:
                 if file.endswith(".json"):
@@ -45,22 +44,24 @@ class WebzioPipeline(BaseDataPipeline):
 
         return df
 
-    def _run_processing(self, df: pd.DataFrame) -> pd.DataFrame | None:
+    def _run_processing(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
 
         df["label"] = Label.FAKE.value
-        df["text"] = df["text"].str.strip().str.replace(r"\s+", " ", regex=True)
+        df["text"] = (
+            df["text"]
+            .astype(str)
+            .str.strip()
+            .str.replace(r"\s+", " ", regex=True)
+        )
         df["publish_date"] = pd.to_datetime(
             df["publish_date"], errors="coerce", utc=True
         )
-        df.loc[df["title"] == "", "title"] = pd.NA
-
+        df["title"] = df["title"].astype(str)
+        df.loc[df["title"].str.strip() == "", "title"] = pd.NA
         df = df.dropna(subset=["text", "label"]).drop_duplicates(subset=["text"])
+        df["language"] = df["text"].apply(self.lang_service.detect_code)
 
-        detector = LanguageDetectorBuilder.from_all_spoken_languages().build()
-        df["language"] = df["text"].apply(
-            lambda x: detector.detect_language_of(x).iso_code_639_1.name
-        )
-        df = df[df["language"] == "EN"]
+        df = df[df["language"] == "en"]
 
         return df

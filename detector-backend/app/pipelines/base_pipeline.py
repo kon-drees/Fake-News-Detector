@@ -2,17 +2,20 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
+from services.language_service import LanguageDetectionService
+
 
 class BaseDataPipeline(ABC):
     def __init__(self, dataset_name: str):
         self.dataset_name = dataset_name
+        self.lang_service = LanguageDetectionService()
 
     @abstractmethod
     def _load_data(self) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def _run_processing(self, df: pd.DataFrame) -> pd.DataFrame | None:
+    def _run_processing(self, df: pd.DataFrame) -> pd.DataFrame:
         pass
 
     def process_data(self) -> pd.DataFrame | None:

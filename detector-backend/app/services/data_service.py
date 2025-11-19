@@ -5,10 +5,12 @@ from app.db import Database
 from app.pipelines.base_pipeline import BaseDataPipeline
 from app.pipelines.webzio_pipeline import WebzioPipeline
 from app.pipelines.welfake_pipeline import WelfakePipeline
+from pipelines.germanfakenc_pipeline import GermanFakeNCPipeline
 
 
 class DataService:
     PIPELINES = {
+        "germanfakenc": GermanFakeNCPipeline,
         "welfake": WelfakePipeline,
         "webzio": WebzioPipeline,
     }
@@ -21,7 +23,7 @@ class DataService:
         if df is None or df.empty:
             raise ValueError(f"[DataService] No data found for {dataset}")
 
-        required_cols = {"title", "text", "label"}
+        required_cols = {"title", "text", "label", "language"}
         if not required_cols.issubset(df.columns):
             raise ValueError(
                 f"[DataService] Dataframe of {dataset} is missing at least on of {required_cols} Columns."
