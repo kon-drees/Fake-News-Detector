@@ -22,4 +22,5 @@ class Database:
         return db["articles"]
 
     def close(self) -> None:
-        self._client.close()
+        if self._client:
+            self._client.close()
