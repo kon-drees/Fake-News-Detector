@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
-from services.language_service import LanguageDetectionService
+from app.services.language_service import LanguageDetectionService
 
 
 class BaseDataPipeline(ABC):

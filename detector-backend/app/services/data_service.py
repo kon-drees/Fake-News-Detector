@@ -5,7 +5,7 @@ from app.db import Database
 from app.pipelines.base_pipeline import BaseDataPipeline
 from app.pipelines.webzio_pipeline import WebzioPipeline
 from app.pipelines.welfake_pipeline import WelfakePipeline
-from pipelines.germanfakenc_pipeline import GermanFakeNCPipeline
+from app.pipelines.germanfakenc_pipeline import GermanFakeNCPipeline
 
 
 class DataService:
