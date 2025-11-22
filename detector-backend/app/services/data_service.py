@@ -7,7 +7,8 @@ from app.pipelines.webzio_pipeline import WebzioPipeline
 from app.pipelines.welfake_pipeline import WelfakePipeline
 from pipelines.germa_pipeline import GermaPipeline
 from pipelines.german_news_pipeline import GermanNewsPipeline
-from pipelines.germanfakenc_pipeline import GermanFakeNCPipeline
+from app.pipelines.germanfakenc_pipeline import GermanFakeNCPipeline
+from app.pipelines.gossipcop_pipeline import GossipCopPipeline
 
 
 class DataService:
@@ -17,6 +18,7 @@ class DataService:
         "welfake": WelfakePipeline,
         "webzio": WebzioPipeline,
         "germa": GermaPipeline,
+        "gossipcop": GossipCopPipeline,
     }
 
     def __init__(self) -> None:

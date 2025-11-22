@@ -214,3 +214,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+/detector-backend/rawdata
+/detector-backend/gossipcop_pp_clean.csv
+
+.DS_Store
