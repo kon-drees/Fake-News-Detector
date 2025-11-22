@@ -6,7 +6,7 @@ from typing import Optional, List
 import requests
 from bs4 import BeautifulSoup
 
-from domain import Label, ScrapedArticle, TrainingArticle, Language
+from app.domain import Label, ScrapedArticle, TrainingArticle, Language
 
 HERE = Path(__file__).resolve()
 BACKEND_DIR = HERE.parents[2]
