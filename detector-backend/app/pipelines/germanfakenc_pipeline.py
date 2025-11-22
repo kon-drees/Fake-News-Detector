@@ -2,7 +2,7 @@ import pandas as pd
 
 from app.core.config import Settings
 from app.pipelines.base_pipeline import BaseDataPipeline
-from domain import Language
+from app.domain import Language
 
 settings = Settings()
 
