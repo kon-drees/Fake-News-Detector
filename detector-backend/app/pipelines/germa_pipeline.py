@@ -3,7 +3,7 @@ import pandas as pd
 
 from app.core.config import Settings
 from app.pipelines.base_pipeline import BaseDataPipeline
-from domain import Label, Language
+from app.domain import Label, Language
 
 settings = Settings()
 
