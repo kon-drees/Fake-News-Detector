@@ -2,6 +2,7 @@ import pandas as pd
 
 from app.core.config import Settings
 from app.pipelines.base_pipeline import BaseDataPipeline
+from domain import Language
 
 settings = Settings()
 
@@ -33,7 +34,7 @@ class GermanFakeNCPipeline(BaseDataPipeline):
         df["publish_date"] = df["publish_date"].dt.strftime("%Y-%m-%d")
         df["publish_date"] = df["publish_date"].fillna("")
         df = df.dropna(subset=["text", "label"]).drop_duplicates(subset=["text"])
-        df["language"] = "de"
+        df["language"] = Language.DE.value
         df["label"] = df["label"].astype(str)
         if "source" in df.columns:
             df["source"] = df["source"].fillna("")
