@@ -44,7 +44,12 @@ class WelfakePipeline(BaseDataPipeline):
         df["title"] = df["title"].astype(str)
         df.loc[df["title"].str.strip() == "", "title"] = pd.NA
         df = df.dropna(subset=["text", "label"]).drop_duplicates(subset=["text"])
-        df["label"] = df["label"].apply(lambda label: Label.from_number(label).value)
+        #labels sind vertauscht!!!!
+        df["label"] = df["label"].astype(int)
+        df["label"] = df["label"].map({
+            0: Label.REAL.value,
+            1: Label.FAKE.value,
+        })
         df["language"] = df["text"].apply(self.lang_service.detect_code)
         df = df[df["language"] == "en"]
         return df
