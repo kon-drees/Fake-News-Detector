@@ -44,6 +44,8 @@ class WelfakePipeline(BaseDataPipeline):
         df["title"] = df["title"].astype(str)
         df.loc[df["title"].str.strip() == "", "title"] = pd.NA
         df = df.dropna(subset=["text", "label"]).drop_duplicates(subset=["text"])
+        # swap label
+        df["label"] = 1 - df["label"]
         df["label"] = df["label"].apply(lambda label: Label.from_number(label).value)
         df["language"] = df["text"].apply(self.lang_service.detect_code)
         df = df[df["language"] == "en"]
