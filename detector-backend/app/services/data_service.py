@@ -5,16 +5,20 @@ from app.db import Database
 from app.pipelines.base_pipeline import BaseDataPipeline
 from app.pipelines.webzio_pipeline import WebzioPipeline
 from app.pipelines.welfake_pipeline import WelfakePipeline
+from app.pipelines.germa_pipeline import GermaPipeline
+from app.pipelines.german_news_pipeline import GermanNewsPipeline
 from app.pipelines.germanfakenc_pipeline import GermanFakeNCPipeline
 from app.pipelines.gossipcop_pipeline import GossipCopPipeline
 
 
 class DataService:
     PIPELINES = {
+        "germannews": GermanNewsPipeline,
         "germanfakenc": GermanFakeNCPipeline,
         "welfake": WelfakePipeline,
         "webzio": WebzioPipeline,
-        "gossipcop": GossipCopPipeline,
+        "germa": GermaPipeline,
+        #"gossipcop": GossipCopPipeline,
     }
 
     def __init__(self) -> None:
