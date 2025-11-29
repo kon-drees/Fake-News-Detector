@@ -1,0 +1,24 @@
+Metadata-Version: 2.4
+Name: fake-news-detector
+Version: 0.1.0
+Summary: Fake News Detection
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: beautifulsoup4>=4.14.2
+Requires-Dist: fastapi>=0.121.1
+Requires-Dist: ipykernel>=7.1.0
+Requires-Dist: jupyter>=1.1.1
+Requires-Dist: lingua-language-detector>=2.1.1
+Requires-Dist: matplotlib>=3.10.7
+Requires-Dist: pandas>=2.3.3
+Requires-Dist: pydantic-settings>=2.12.0
+Requires-Dist: pymongo>=4.15.4
+Requires-Dist: requests>=2.32.5
+Requires-Dist: scikit-learn>=1.7.2
+Requires-Dist: seaborn>=0.13.2
+Requires-Dist: uvicorn>=0.38.0
+Requires-Dist: wordcloud>=1.9.4
+Dynamic: license-file
+
+# Fake-News-Detector
