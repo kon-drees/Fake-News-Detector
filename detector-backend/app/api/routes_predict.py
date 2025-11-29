@@ -1,17 +1,29 @@
-from fastapi import APIRouter
-from app.schemas import PredictionResponse
+from fastapi import APIRouter, HTTPException, Request
+
+from app.domain import Label
+from app.schemas import PredictionResponse, TextRequest
 
 router = APIRouter()
 
 
-@router.get("/predict", response_model=PredictionResponse)
-def predict():
-    return PredictionResponse(
-        label="fake",
-        probabilities={"fake": 0.8, "real": 0.2},
-    )
+@router.post("/predict", response_model=PredictionResponse)
+async def predict(request: TextRequest, req: Request) -> PredictionResponse:
+    detector = req.state.detector
 
+    try:
+        result = detector.predict(request.text)
 
-@router.get("/highlight")
-def highlight():
-    return {"status": "ok"}
+        fake_score = (
+            result.score if result.label == Label.FAKE else round(1 - result.score, 4)
+        )
+        real_score = result.score if result.label == Label.REAL else 1 - result.score
+
+        return PredictionResponse(
+            prediction_result=result,
+            confidence_fake=fake_score,
+            confidence_real=real_score,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,19 +1,20 @@
-import datetime
-from typing import Dict, List, Optional
+from typing import Annotated, List
+
+from fastapi import Query
 from pydantic import BaseModel
 
+from app.domain import PredictionResult, TokenContribution
 
-class PredictTextRequest(BaseModel):
-    text: str
 
-class HighlightTokenSchema(BaseModel):
-    text: str
-    start: int
-    end: int
-    score: float
+class TextRequest(BaseModel):
+    text: Annotated[str, Query(min_length=10)]
+
 
 class PredictionResponse(BaseModel):
-    label: str
-    probabilities: Dict[str, float]
-    highlights: Optional[List[HighlightTokenSchema]]
-    meta: Optional[dict] = None
+    prediction_result: PredictionResult
+    confidence_fake: float
+    confidence_real: float
+
+
+class HighlightResponse(BaseModel):
+    highlights: List[TokenContribution]
