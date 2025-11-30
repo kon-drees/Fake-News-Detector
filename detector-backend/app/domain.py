@@ -12,15 +12,14 @@ class Article:
 @dataclass
 class PredictionResult:
     label: str
-    probabilities: Dict[str, float]
+    score: float
 
 
 @dataclass
-class HighlightToken:
-    text: str
-    start: int
-    end: int
+class TokenContribution:
+    token: str
     score: float
+    score_normalized: float
 
 
 class Label(str, Enum):
@@ -58,4 +57,3 @@ class TrainingArticle:
     source: Optional[str]
     publish_date: Optional[datetime]
     language: Language
-
