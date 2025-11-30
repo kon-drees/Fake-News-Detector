@@ -2,6 +2,7 @@ from typing import List, Literal
 
 from fastapi import HTTPException
 from shap import Explainer
+import torch
 from transformers import pipeline, Pipeline
 
 from app.domain import PredictionResult, TokenContribution
@@ -12,8 +13,8 @@ from app.domain import Label
 class FakeNewsDetector:
     def __init__(self):
         # TODO: Change URI for own models
-        self.pipe_en = pipeline("text-classification", "Pulk17/Fake-News-Detection")
-        self.pipe_de = pipeline("text-classification", "Pulk17/Fake-News-Detection")
+        self.pipe_en = pipeline("text-classification", "Pulk17/Fake-News-Detection", device=0 if torch.cuda.is_available() else -1)
+        self.pipe_de = pipeline("text-classification", "Pulk17/Fake-News-Detection", device=0 if torch.cuda.is_available() else -1)
         self.explainer_en = Explainer(self.pipe_en)
         self.explainer_de = Explainer(self.pipe_de)
         self.language_detector = LanguageDetectionService()
