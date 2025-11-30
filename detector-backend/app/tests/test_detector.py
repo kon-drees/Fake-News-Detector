@@ -26,9 +26,9 @@ def test_highlight_structure(detector):
     assert isinstance(highlights, list)
     assert len(highlights) > 0
 
-    # Shap always returns on empty space before and after the string
-    first_token = highlights[1]
+    first_token = highlights[0]
 
     assert isinstance(first_token, TokenContribution)
     assert first_token.token.strip() == "Donald"
     assert isinstance(first_token.score, float)
+    assert isinstance(first_token.score_normalized, float)

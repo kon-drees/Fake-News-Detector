@@ -57,9 +57,14 @@ class FakeNewsDetector:
 
         tokens = shap_values.data[0]
         values = shap_values.values[0, :, target_class]
+        max_abs_value = max([abs(v) for v in values])
 
         highlights = []
-        for token, value in zip(tokens, values):
-            highlights.append(TokenContribution(token, value))
+        for token, score in zip(tokens, values):
+            if token.strip() == "":
+                continue
+
+            score_normalized = score / max_abs_value
+            highlights.append(TokenContribution(token, score, score_normalized))
 
         return highlights

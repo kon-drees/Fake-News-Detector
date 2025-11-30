@@ -19,6 +19,7 @@ class PredictionResult:
 class TokenContribution:
     token: str
     score: float
+    score_normalized: float
 
 
 class Label(str, Enum):

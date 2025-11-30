@@ -14,7 +14,7 @@ class MockFakeNewsDetector:
         return PredictionResult(label=Label.FAKE, score=0.95)
 
     def highlight(self, text: str) -> List[TokenContribution]:
-        return [TokenContribution("Fake", 0.9), TokenContribution("Article", 0.1)]
+        return [TokenContribution("Fake", 0.9, 0.9), TokenContribution("Article", 0.1, 0.1)]
 
 
 @pytest.fixture(scope="module")
