@@ -22,12 +22,12 @@
     try {
       //result = await predictAndHighlight(text);
       // Dummy demonstration
-      const dummytext = "BREAKING: Hidden technology has reportedly been discovered inside the newly released Covid 19 Vaccines. Anonymous lab workers claim the patches contain micro-trackers, and several say they were pressured not to speak publicly. Independent investigators tried publishing their findings, but the reports allegedly vanished within hours. For the full documents, join our private channel before they disappear again.";
+      const dummytext = "BREAKING: Hidden technology has reportedly been discovered inside the newly released Covid 19 vaccines. Anonymous lab workers claim the vaccines contain micro-trackers, and several say they were pressured not to speak publicly. Independent investigators tried publishing their findings, but the reports allegedly vanished within hours. For the full documents, join our private channel before they disappear again.";
       result = {
         predictionProbability: 28.63,
         text: dummytext,
         words: dummytext.split(" "),
-        highlighting: [-0.5, 0.1, 0, 0.23, 0.22, -0.6, 1, -0.16, -1, -0.5, 0.1, 0, 0.23, 0.22, -0.6, 0.9, -0.16, -0.5, 0.1, 0, 0.23, 0.22, -0.6, 0.75, -0.36, -0.5, 0.1, 0, 0.23, 0.22, -0.6, 0.4, -0.16, 0.32, -0.6, 0.7, -0.16, -0.5, 0.1, 0.5, 0.23, 0.22, -0.6, 1, -0.16, -0.5, 0.1, 0, 0, -0.05, 0.43, 0.4, -0.6, -0.7, -0.1, -1, 0.2],
+        highlighting: [0.5, 0.1, 0, 0.23, 0.22, -0.6, 1, -0.16, -1, -0.5, 0.1, 0, 0.23, 0.22, 0.6, 0.9, -0.16, -0.5, 0.1, 0, 0.23, 0.22, 0.6, 0.75, -0.36, -0.5, 0.1, 0, 0.23, 0.22, 0.6, 0.4, -0.16, 0.32, -0.6, 0.7, -0.16, -0.5, 0.1, 0.5, 0.23, 0.22, 0.6, 1, 0.16, -0.5, 0.1, 0, 0, -0.05, 0.43, 0.4, -0.6, 0.7, -0.1, 1, 0.2],
       }
     } catch (err) {
       error = 'Error while trying to predict and highlight: ' + err.message;
@@ -60,12 +60,12 @@
   // returns color gradient based on given value with green for postive and red for negative values
   function valueToBackground(value) {
     if (value === 0) return 'transparent';
-    if (value > 0) {
+    if (value < 0) {
       // green for positive values
-      return `rgba(0, 210, 0, ${value})`; 
+      return `rgba(0, 210, 0, ${-value})`; 
     } else {
       // red for negative values
-      return `rgba(210, 0, 0, ${-value})`;
+      return `rgba(210, 0, 0, ${value})`;
     }
   }
 
