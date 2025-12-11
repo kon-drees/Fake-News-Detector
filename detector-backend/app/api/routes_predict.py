@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from ..schemas import PredictionResponse
+from app.schemas import PredictionResponse
 
 router = APIRouter()
 
