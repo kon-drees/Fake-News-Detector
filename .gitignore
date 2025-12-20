@@ -8,6 +8,7 @@ __pycache__/
 .venv/
 venv/
 .python-version
+!/detector-backend/.python-version
 pip-log.txt
 pip-delete-this-directory.txt
 build/

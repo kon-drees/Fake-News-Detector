@@ -1,8 +1,0 @@
-LICENSE
-README.md
-pyproject.toml
-fake_news_detector.egg-info/PKG-INFO
-fake_news_detector.egg-info/SOURCES.txt
-fake_news_detector.egg-info/dependency_links.txt
-fake_news_detector.egg-info/requires.txt
-fake_news_detector.egg-info/top_level.txt
