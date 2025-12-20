@@ -1,0 +1,35 @@
+name: Deploy to Lightsail (AWS)
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH (git pull + docker compose)
+        run: |
+          set -e
+
+          # SSH key aus GitHub Secret schreiben
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          # Host-Key automatisch akzeptieren (non-interactive)
+          ssh-keyscan -H "${{ secrets.LIGHTSAIL_HOST }}" >> ~/.ssh/known_hosts
+
+          # Remote deploy
+          ssh "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" << 'EOF'
+            set -e
+            cd /home/deploy/app
+
+            # Repo auf den Stand von origin/main setzen
+            git fetch --all
+            git reset --hard origin/main
+
+            # Container neu bauen und starten
+            docker compose -f docker-compose.prod.yml up -d --build
+            docker image prune -f
+          EOF
