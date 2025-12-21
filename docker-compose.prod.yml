@@ -1,23 +1,11 @@
 version: "3.9"
 
 services:
-  mongo:
-    image: mongo:7
-    restart: always
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
   backend:
     build:
       context: ./detector-backend
       dockerfile: Dockerfile
-    environment:
-      MONGO_URL: mongodb://mongo:27017
-      MONGO_DB_NAME: fakenews
-    depends_on:
-      - mongo
+    restart: always
     ports:
       - "8000:8000"
 
@@ -26,12 +14,9 @@ services:
       context: ./detector-frontend
       dockerfile: Dockerfile
       args:
-        # Browser calls same host; nginx proxies /api to backend
         VITE_API_URL: /api
     depends_on:
       - backend
+    restart: always
     ports:
       - "80:80"
-
-volumes:
-  mongo-data:

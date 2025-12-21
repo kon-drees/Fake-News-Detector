@@ -1,0 +1,136 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #283857;
+  color: #eee;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#app-container {
+  max-width: 80rem;
+  margin: 1rem auto;
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+.title {
+  text-align: center;
+  font-size: 2rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+#input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-box {
+  width: 100%;
+  min-height: 10rem;
+  max-height: 30rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #444;
+  background-color: #2b2b2b;
+  color: #eee;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.input-box::placeholder {
+  color: #888;
+}
+
+.btn {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background-color 0.3s ease;
+}
+
+.btn:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+}
+
+.btn:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.divider {
+  margin: 2rem 0;
+  border: 0;
+  height: 1px;
+  background: #444;
+}
+
+.result-card {
+  background: #2b2b2b;
+  padding: 1rem;
+  border-radius: 5px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.highlight-word {
+  padding: 0 4px;
+  border-radius: 3px;
+  margin: 0 2px;
+  color: #fff; /* ensures readability on dark bg */
+}
+
+.error {
+  color: #ff5555;
+  font-weight: bold;
+}
+
+h1 {
+
+}
+
+h2 {
+  text-align: center;
+  margin: 0 0 1.5rem 0;
+  color: #fff;
+}
+
+h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.highlight-legend {
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-bottom: 1rem;
+}
+
+.legend-green {
+  background-color: rgba(0, 200, 0, 0.6);
+  padding: 0 4px;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.legend-red {
+  background-color: rgba(255, 50, 50, 0.6);
+  padding: 0 4px;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.highlighted-words {
+  line-height: 1.6;
+}
+
+p {
+  margin: 0.25rem 0;
+}
