@@ -17,10 +17,19 @@ model = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    model["detector"] = FakeNewsDetector()
-    model["fact_checker"] = FactCheckAgent()
-    yield {"detector": model["detector"], "fact_checker": model["fact_checker"]}
-    model.clear()
+    detector = FakeNewsDetector()
+    fact_checker = FactCheckAgent()
+
+    model["detector"] = detector
+    model["fact_checker"] = fact_checker
+
+    app.state.detector = detector
+    app.state.fact_checker = fact_checker
+
+    try:
+        yield {"detector": detector, "fact_checker": fact_checker}
+    finally:
+        model.clear()
 
 
 app = FastAPI(title="Fake News Backend", lifespan=lifespan)
