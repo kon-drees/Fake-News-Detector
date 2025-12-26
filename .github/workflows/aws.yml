@@ -14,6 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Free disk space on runner
+        run: |
+          set -e
+          df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android || true
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/* || true
+          docker system prune -af || true
+          df -h
+
       - uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
@@ -30,6 +40,16 @@ jobs:
           file: ./detector-backend/Dockerfile
           push: true
           tags: ghcr.io/kon-drees/fake-news-detector-backend:latest
+          provenance: false
+          sbom: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Prune after backend build
+        run: |
+          docker builder prune -af || true
+          docker image prune -af || true
+          df -h
 
       - name: Build & push frontend
         uses: docker/build-push-action@v6
@@ -40,6 +60,10 @@ jobs:
           tags: ghcr.io/kon-drees/fake-news-detector-frontend:latest
           build-args: |
             VITE_API_URL=/api
+          provenance: false
+          sbom: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     needs: build_and_push
@@ -57,8 +81,6 @@ jobs:
             "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" << 'EOF'
             set -e
             cd /home/deploy/app
-            git fetch --all
-            git reset --hard origin/main
 
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --force-recreate
