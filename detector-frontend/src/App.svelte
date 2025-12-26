@@ -39,13 +39,8 @@
       }
       score = predictRes.prediction_result.score.toFixed(4);
 
-      if (score >= 0.9) predictionCategory = 'Almost certainly fake news';
-      else if (score >= 0.7) predictionCategory = 'Very likely fake news';
-      else if (score >= 0.5) predictionCategory = 'Likely fake news';
-      else if (score >= 0.3) predictionCategory = 'Likely not fake news';
-      else if (score >= 0.1) predictionCategory = 'Very likely not fake news';
-      else predictionCategory = 'Almost certainly not fake news';
-
+      predictionCategory = capitalizeFirstLetter(predictRes.prediction_result.label)
+      
     } catch (err) {
       error = 'Prediction failed: ' + err.message;
     }
@@ -72,6 +67,10 @@
     return value > 0 
       ? `rgba(210, 0, 0, ${intensity})` 
       : `rgba(0, 210, 0, ${intensity})`;
+  }
+
+  function capitalizeFirstLetter(val) {
+    return String(val).charAt(0).toUpperCase() + String(val).slice(1);
   }
 </script>
 
@@ -120,7 +119,7 @@
       <div id="prediction-values" class="result-card">
         <h2>Prediction Result</h2>
         <p><strong>Prediction:</strong> {predictionCategory}</p>
-        <p><strong>Fake news probability score:</strong> {(score * 100).toFixed(2)}%</p>
+        <p><strong>Confidence Score:</strong> {(score * 100).toFixed(2)}%</p>
       </div>
     {/if}
 
