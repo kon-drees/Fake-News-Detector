@@ -778,6 +778,8 @@ dependencies = [
     { name = "requests" },
     { name = "scikit-learn" },
     { name = "shap" },
+    { name = "torch" },
+    { name = "transformers" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -788,8 +790,6 @@ dev = [
     { name = "matplotlib" },
     { name = "pytest" },
     { name = "seaborn" },
-    { name = "torch" },
-    { name = "transformers" },
     { name = "wordcloud" },
 ]
 
@@ -810,8 +810,8 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.7.2" },
     { name = "seaborn", marker = "extra == 'dev'", specifier = ">=0.13.2" },
     { name = "shap", specifier = ">=0.49.1" },
-    { name = "torch", marker = "extra == 'dev'", specifier = ">=2.9.1" },
-    { name = "transformers", marker = "extra == 'dev'", specifier = ">=4.57.3" },
+    { name = "torch", specifier = "==2.9.1" },
+    { name = "transformers", specifier = ">=4.57.3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.38.0" },
     { name = "wordcloud", marker = "extra == 'dev'", specifier = ">=1.9.4" },
 ]
