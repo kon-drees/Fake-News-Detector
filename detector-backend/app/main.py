@@ -1,26 +1,32 @@
 from contextlib import asynccontextmanager
+import os
 from typing import Dict
 
 from fastapi import FastAPI
 
 from app.api.routes_predict import router as predict_router
 from app.api.routes_highlight import router as highlight_router
+from app.api.routes_fact_check import router as fact_check_router
 from app.core.detector import FakeNewsDetector
+from app.core.fact_check_agent import FactCheckAgent
 
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 model = {}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     model["detector"] = FakeNewsDetector()
-    yield {"detector": model["detector"]}
+    model["fact_checker"] = FactCheckAgent()
+    yield {"detector": model["detector"], "fact_checker": model["fact_checker"]}
     model.clear()
 
 
 app = FastAPI(title="Fake News Backend", lifespan=lifespan)
 app.include_router(predict_router, prefix="/api")
 app.include_router(highlight_router, prefix="/api")
+app.include_router(fact_check_router, prefix="/api")
 
 
 @app.get("/health")
