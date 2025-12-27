@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "vite": "^7.2.4"
+  },
+  "dependencies": {
+    "@sveltejs/kit": "^0.0.30",
+    "flowbite": "^4.0.1",
+    "flowbite-svelte": "^1.31.0"
+  }
+}
