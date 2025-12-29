@@ -1,13 +1,14 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from app.schemas import TextRequest, HighlightResponse
+from app.api.dependencies import get_detector
 
 router = APIRouter()
 
 
 @router.post("/highlight", response_model=HighlightResponse)
 async def highlight(request: TextRequest, req: Request) -> HighlightResponse:
-    detector = req.state.detector
+    detector = get_detector(req)
 
     try:
         result = detector.highlight(request.text)
