@@ -4,6 +4,7 @@ from typing import Dict
 
 from fastapi import FastAPI
 
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes_predict import router as predict_router
 from app.api.routes_highlight import router as highlight_router
 from app.api.routes_fact_check import router as fact_check_router
@@ -21,7 +22,6 @@ async def lifespan(app: FastAPI):
     model["fact_checker"] = FactCheckAgent()
     yield {"detector": model["detector"], "fact_checker": model["fact_checker"]}
     model.clear()
-
 
 app = FastAPI(title="Fake News Backend", lifespan=lifespan)
 app.include_router(predict_router, prefix="/api")
