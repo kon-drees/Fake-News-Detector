@@ -12,9 +12,16 @@ from app.domain import Label
 
 class FakeNewsDetector:
     def __init__(self):
-        # TODO: Change URI for own models
-        self.pipe_en = pipeline("text-classification", "Pulk17/Fake-News-Detection", device=0 if torch.cuda.is_available() else -1)
-        self.pipe_de = pipeline("text-classification", "Pulk17/Fake-News-Detection", device=0 if torch.cuda.is_available() else -1)
+        self.pipe_en = pipeline(
+            "text-classification",
+            "Lennywinks/fake-news-detector-english",
+            device=0 if torch.cuda.is_available() else -1,
+        )
+        self.pipe_de = pipeline(
+            "text-classification",
+            "Lennywinks/fake-news-detector-german",
+            device=0 if torch.cuda.is_available() else -1,
+        )
         self.explainer_en = Explainer(self.pipe_en)
         self.explainer_de = Explainer(self.pipe_de)
         self.language_detector = LanguageDetectionService()
@@ -50,20 +57,38 @@ class FakeNewsDetector:
 
     def highlight(self, text: str) -> List[TokenContribution]:
         explainer = self.choose_language(text, return_element="explainer")
-        shap_values = explainer([text])
+
+        try:
+            shap_values = explainer([text])
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500, detail=f"Could not generate highlights: {exc}"
+            ) from exc
 
         # Always explain the values for label fake -> Positive value: fake, Negative value: real
         target_class = 0
 
-        tokens = shap_values.data[0]
-        values = shap_values.values[0, :, target_class]
-        max_abs_value = max([abs(v) for v in values])
+        if not hasattr(shap_values, "data") or not hasattr(shap_values, "values"):
+            return []
+
+        tokens = shap_values.data[0] if len(shap_values.data) else []
+        values = shap_values.values
+
+        try:
+            values = values[0, :, target_class]
+        except Exception:
+            values = values[0] if len(values) else []
 
         highlights = []
-        for token, score in zip(tokens, values):
-            if token.strip() == "":
-                continue
 
+        token_value_pairs = [
+            (str(token), float(score))
+            for token, score in zip(tokens, values)
+            if str(token).strip() != ""
+        ]
+        max_abs_value = max((abs(v) for _, v in token_value_pairs), default=0.0) or 1.0
+
+        for token, score in token_value_pairs:
             score_normalized = score / max_abs_value
             highlights.append(TokenContribution(token, score, score_normalized))
 

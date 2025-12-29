@@ -2,13 +2,14 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.domain import Label
 from app.schemas import PredictionResponse, TextRequest
+from app.api.dependencies import get_detector
 
 router = APIRouter()
 
 
 @router.post("/predict", response_model=PredictionResponse)
 async def predict(request: TextRequest, req: Request) -> PredictionResponse:
-    detector = req.state.detector
+    detector = get_detector(req)
 
     try:
         result = detector.predict(request.text)
