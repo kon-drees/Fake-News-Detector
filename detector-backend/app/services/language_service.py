@@ -6,7 +6,12 @@ from lingua import Language, LanguageDetectorBuilder
 
 
 class LanguageDetectionService:
+    """
+    Service for identifying the natural language of a given text.
+    """
+
     def __init__(self, restrict_to: Optional[list[str]] = None) -> None:
+        # Optional language filter
         if restrict_to:
             langs = []
             for code in restrict_to:
@@ -20,6 +25,9 @@ class LanguageDetectionService:
             self._detector = LanguageDetectorBuilder.from_all_spoken_languages().build()
 
     def detect_code(self, text: str) -> Optional[str]:
+        """
+        Identifies the language and returns its ISO 639-1 code ('en', 'de' etc.).
+        """
         if not isinstance(text, str):
             return None
         text = text.strip()

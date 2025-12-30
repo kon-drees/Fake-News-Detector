@@ -8,6 +8,11 @@ router = APIRouter()
 
 @router.post("/predict", response_model=PredictionResponse)
 async def predict(request: TextRequest, req: Request) -> PredictionResponse:
+    """
+    Main entry point for BERT-based text classification.
+    Analyzes the input text and returns a probability score for both 'REAL' and 'FAKE' labels.
+    """
+    # Access the detector initialized in the app's lifespan
     detector = req.state.detector
 
     try:

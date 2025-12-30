@@ -11,12 +11,18 @@ from app.core.detector import FakeNewsDetector
 from app.core.fact_check_agent import FactCheckAgent
 
 
+# Disabling parallelism prevents deadlocks on macOS/Linux when
+# the process forks during the LLM agent call.
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# Global storage for heavy model instances to avoid re-loading them on every request.
 model = {}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Initializes the FakeNewsDetector and FactCheckAgent on startup and clears them from memory on shutdown.
+    """
     model["detector"] = FakeNewsDetector()
     model["fact_checker"] = FactCheckAgent()
     yield {"detector": model["detector"], "fact_checker": model["fact_checker"]}
@@ -24,6 +30,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Fake News Backend", lifespan=lifespan)
+# Route Registration
 app.include_router(predict_router, prefix="/api")
 app.include_router(highlight_router, prefix="/api")
 app.include_router(fact_check_router, prefix="/api")
