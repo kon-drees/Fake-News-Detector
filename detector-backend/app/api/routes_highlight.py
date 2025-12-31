@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from app.schemas import TextRequest, HighlightResponse
+from app.api.dependencies import get_detector
 
 router = APIRouter()
 
@@ -13,7 +14,7 @@ async def highlight(request: TextRequest, req: Request) -> HighlightResponse:
     Positive values represent tokens, which contribute to a Fake News classification.
     """
     # Access the detector initialized in the app's lifespan
-    detector = req.state.detector
+    detector = get_detector(req)
 
     try:
         result = detector.highlight(request.text)

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from app.schemas import TextRequest, FactCheckResponse
+from app.api.dependencies import get_fact_checker
 
 router = APIRouter()
 
@@ -12,7 +13,7 @@ async def fact_check(request: TextRequest, req: Request) -> FactCheckResponse:
     The analysis is performed by GPT-5-nano
     """
     # Access the agent initialized in the app's lifespan
-    fact_checker = req.state.fact_checker
+    fact_checker = get_fact_checker(req)
 
     try:
         result = await fact_checker.run_fact_check(request)

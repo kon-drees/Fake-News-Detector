@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.domain import Label
 from app.schemas import PredictionResponse, TextRequest
+from app.api.dependencies import get_detector
 
 router = APIRouter()
 
@@ -13,7 +14,7 @@ async def predict(request: TextRequest, req: Request) -> PredictionResponse:
     Analyzes the input text and returns a probability score for both 'REAL' and 'FAKE' labels.
     """
     # Access the detector initialized in the app's lifespan
-    detector = req.state.detector
+    detector = get_detector(req)
 
     try:
         result = detector.predict(request.text)

@@ -4,6 +4,7 @@ from typing import Dict
 
 from fastapi import FastAPI
 
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes_predict import router as predict_router
 from app.api.routes_highlight import router as highlight_router
 from app.api.routes_fact_check import router as fact_check_router
@@ -20,14 +21,19 @@ model = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Initializes the FakeNewsDetector and FactCheckAgent on startup and clears them from memory on shutdown.
-    """
-    model["detector"] = FakeNewsDetector()
-    model["fact_checker"] = FactCheckAgent()
-    yield {"detector": model["detector"], "fact_checker": model["fact_checker"]}
-    model.clear()
+    detector = FakeNewsDetector()
+    fact_checker = FactCheckAgent()
 
+    model["detector"] = detector
+    model["fact_checker"] = fact_checker
+
+    app.state.detector = detector
+    app.state.fact_checker = fact_checker
+
+    try:
+        yield {"detector": detector, "fact_checker": fact_checker}
+    finally:
+        model.clear()
 
 app = FastAPI(title="Fake News Backend", lifespan=lifespan)
 # Route Registration

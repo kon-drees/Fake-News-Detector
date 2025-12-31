@@ -81,7 +81,12 @@ class FakeNewsDetector:
         explainer = self.choose_language(text, return_element="explainer")
 
         # This call is computationally expensive as it requires multiple inference passes to calculate Shapley values.
-        shap_values = explainer([text])
+        try:
+            shap_values = explainer([text])
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500, detail=f"Could not generate highlights: {exc}"
+            ) from exc
 
         # Get the predicted label
         prediction = self.predict(text)
