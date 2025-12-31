@@ -292,9 +292,37 @@ class ArticleExtractor:
             }
 
         user_input = user_input.strip()
+        lines = [line.strip() for line in user_input.splitlines() if line.strip()]
 
         # ---------------------------------------------------------
-        # Fall 1: Eingabe ist ein reiner Link → Artikel extrahieren
+        # Fall 1: Mehrere Zeilen → prüfen, ob alle URLs
+        # ---------------------------------------------------------
+        if len(lines) > 1 and all(self._is_pure_url(line) for line in lines):
+            combined_text = []
+            errors = []
+            title = None
+            result = None
+
+            for line in lines:
+                result = self._extract_article_with_fundus(line)
+                if title is None:
+                    title = result["title"]
+                if result["success"] and result["text"]:
+                    combined_text.append(result["text"])
+                if result["error"]:
+                    errors.append(f"{line}: {result['error']}")
+
+            return {
+                "success": len(combined_text) > 0,
+                "input_type": "multi_url",
+                "publisher": result["publisher"],
+                "title": title,
+                "text": "\n\n".join(combined_text) if combined_text else None,
+                "error": "\n".join(errors) if errors else None,
+            }
+
+        # ---------------------------------------------------------
+        # Fall 2: Einzelne URL
         # ---------------------------------------------------------
         if self._is_pure_url(user_input):
             return self._extract_article_with_fundus(user_input)
@@ -315,5 +343,5 @@ class ArticleExtractor:
 # Test Extraktion eines Artikels
 supported_languages = {"de", "en"}
 extractor = ArticleExtractor(supported_languages)
-print(extractor.process('https://www.golem.de/news/science-fiction-neuer-star-trek-film-von-den-dungeons-dragons-machern-2511-202218.html'))
+print(extractor.process('https://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617.html\nhttps://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617-2.html'))
 
