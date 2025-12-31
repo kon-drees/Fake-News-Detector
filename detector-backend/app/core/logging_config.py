@@ -7,7 +7,7 @@ DEFAULT_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 
 
 def configure_logging() -> logging.Logger:
-    """Configure application logging to stdout with a simple format."""
+    """Configure application logging with a simple format."""
     level_name = os.getenv("LOG_LEVEL", "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)
 
