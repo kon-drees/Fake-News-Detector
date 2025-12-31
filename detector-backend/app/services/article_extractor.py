@@ -29,6 +29,57 @@ from fundus.publishers import PublisherCollection, Publisher, PublisherGroup
 
 
 class ArticleExtractor:
+    def __init__(self) -> None:
+        """
+        Initialisiert den ArticleExtractor.
+
+        Beim Erzeugen der Instanz wird einmalig eine Lookup-Struktur aufgebaut,
+        welche registrierbare Domains (z. B. 'spiegel.de') den entsprechenden
+        FUNDUS-Publishern zuordnet. Diese Vorverarbeitung ermöglicht eine
+        effiziente Publisher-Erkennung mit konstanter Zugriffszeit (O(1))
+        bei späteren Anfragen.
+        """
+        self._publisher_map: Dict[str, Publisher] = {}
+        self._build_publisher_map()
+
+    def _build_publisher_map(self) -> None:
+        """
+        Erstellt eine Mapping-Struktur von Domains zu FUNDUS-Publishern.
+
+        FUNDUS organisiert Publisher teilweise in PublisherGroups. Diese Funktion
+        normalisiert die Struktur, indem alle Publisher – unabhängig von ihrer
+        Gruppierung – iteriert werden.
+
+        Für jede Publisher-Domain wird die registrierbare Root-Domain
+        (z. B. 'spiegel.de') extrahiert und als Schlüssel im Dictionary verwendet.
+        Dadurch können unterschiedliche Subdomains (z. B. 'www.', 'm.', 'amp.')
+        zuverlässig dem gleichen Publisher zugeordnet werden.
+        """
+
+        for entry in PublisherCollection:
+            # PublisherCollection kann einzelne Publisher oder PublisherGroups enthalten
+            if isinstance(entry, PublisherGroup):
+                publishers = entry.publishers
+            else:
+                publishers = [entry]
+
+            for publisher in publishers:
+                domains = publisher.domain
+
+                # FUNDUS erlaubt Domains sowohl als String als auch als Liste
+                if isinstance(domains, str):
+                    domains = [domains]
+
+                for domain in domains:
+                    # Extraktion der registrierbaren Root-Domain
+                    extracted = tldextract.extract(domain)
+
+                    # Zusammensetzen der Root-Domain (z. B. 'spiegel.de')
+                    root_domain = f"{extracted.domain}.{extracted.suffix}"
+
+                    # Speicherung im Lookup-Dictionary
+                    self._publisher_map[root_domain] = publisher
+
 
     def _is_pure_url(self, text: str) -> bool:
         """
@@ -75,50 +126,33 @@ class ArticleExtractor:
 
         return True
 
-
     def _find_publisher_for_url(self, hostname: str) -> Optional[Publisher]:
         """
-        Bestimmt den passenden FUNDUS-Publisher für eine gegebene Host-Domain.
+        Bestimmt den passenden FUNDUS-Publisher anhand der Host-Domain einer URL.
 
-        FUNDUS strukturiert Publisher entweder:
-        - als Einzelobjekt vom Typ Publisher oder
-        - als Gruppe (PublisherGroup), welche mehrere Publisher zusammenfasst.
+        Die übergebene Host-Domain wird zunächst auf ihre registrierbare
+        Root-Domain normalisiert. Anschließend erfolgt ein direkter Lookup
+        im vorverarbeiteten Dictionary.
 
-        Jeder Publisher besitzt eine oder mehrere definierte Domains. Diese Funktion
-        führt eine normalisierte, domainbasierte Übereinstimmung durch.
+        Diese Vorgehensweise vermeidet wiederholte lineare Durchläufe über
+        die PublisherCollection und ist insbesondere für den Einsatz in
+        Webanwendungen effizient.
 
-        :param hostname: Die Host-Komponente einer URL.
-        :return: Optional[Publisher]:
-                - passender Publisher bei Erfolg
-                - None, falls FUNDUS diese Domain nicht unterstützt
+        :param hostname: Hostname einer URL (z. B. 'www.spiegel.de')
+        :return:
+            - Publisher, falls die Domain von FUNDUS unterstützt wird
+            - None, falls kein passender Publisher existiert
         """
 
         if not hostname:
             return None
 
-        # Alle Publisher in FUNDUS durchlaufen
-        for entry in PublisherCollection:
-            # PublisherCollection enthält einzelne Publisher
-            # ODER PublisherGroup, die mehrere Publisher umfasst.
-            if isinstance(entry, PublisherGroup):
-                publishers: List[Publisher] = entry.publishers
-            else:
-                publishers = [entry]
+        # Normalisierung der Host-Domain auf registrierbare Root-Domain
+        extracted = tldextract.extract(hostname)
+        root_domain = f"{extracted.domain}.{extracted.suffix}"
 
-            # Domains prüfen
-            for publisher in publishers:
-                domains = publisher.domain
-
-                # Publisher.domain kann str ODER List[str] sein
-                if isinstance(domains, str):
-                    domains = [domains]
-
-                # Wenn die Domain der URL zu einem Publisher passt → Treffer
-                for domain in domains:
-                    if hostname in domain:
-                        return publisher
-
-        return None
+        # Direkter Lookup im Dictionary (O(1))
+        return self._publisher_map.get(root_domain)
 
 
     def _extract_article_with_fundus(self, url: str) -> Dict[str, Any]:
