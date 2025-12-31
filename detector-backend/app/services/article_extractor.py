@@ -18,6 +18,8 @@ ZIEL:
 from __future__ import annotations
 
 import re
+import tldextract
+import validators
 from urllib.parse import urlparse
 from typing import Optional, Dict, Any, List
 
@@ -27,6 +29,52 @@ from fundus.publishers import PublisherCollection, Publisher, PublisherGroup
 
 
 class ArticleExtractor:
+
+    def _is_pure_url(self, text: str) -> bool:
+        """
+        Prüft, ob ein String ausschließlich aus einer URL besteht.
+
+        Akzeptiert:
+        - http://example.com
+        - https://example.com
+        - example.com/news/article
+
+        Lehnt ab:
+        - "Hier ist ein Link https://example.com"
+        - "example.com und mehr Text"
+        """
+
+        if not text or not text.strip():
+            return False
+
+        text = text.strip()
+
+        # Leerzeichen bedeutet kein reiner Link
+        if " " in text:
+            return False
+
+        # Schema ergänzen, falls nicht vorhanden
+        normalized = text
+        if not re.match(r"^https?://", text):
+            normalized = "https://" + text
+
+        # URL-Syntax prüfen
+        if not validators.url(normalized):
+            return False
+
+        parsed = urlparse(normalized)
+
+        # Keine Domain
+        if not parsed.netloc:
+            return False
+
+        # TLD prüfen
+        extracted = tldextract.extract(parsed.netloc)
+        if not extracted.domain or not extracted.suffix:
+            return False
+
+        return True
+
 
     def _find_publisher_for_url(self, hostname: str) -> Optional[Publisher]:
         """
@@ -73,7 +121,7 @@ class ArticleExtractor:
         return None
 
 
-    def extract_article_with_fundus(self, url: str) -> Dict[str, Any]:
+    def _extract_article_with_fundus(self, url: str) -> Dict[str, Any]:
         """
          Extrahiert einen einzelnen Artikel mithilfe des FUNDUS-Crawlers.
 
@@ -111,6 +159,7 @@ class ArticleExtractor:
         if publisher is None:
             return {
                 "success": False,
+                "input_type": "url",
                 "publisher": None,
                 "title": None,
                 "text": None,
@@ -146,6 +195,7 @@ class ArticleExtractor:
         ):
             return {
                 "success": True,
+                "input_type": "url",
                 "publisher": publisher.name,
                 "title": article.title,
                 "text": article.plaintext,
@@ -157,12 +207,74 @@ class ArticleExtractor:
         # ---------------------------------------------------------
         return {
             "success": False,
+            "input_type": "url",
             "publisher": publisher.name,
             "title": None,
             "text": None,
             "error": "Artikel konnte nicht extrahiert werden.",
         }
 
+
+    def process(self, user_input: str) -> Dict[str, Any]:
+        """
+        Zentrale Einstiegsmethode für die Verarbeitung von Nutzereingaben.
+
+        Diese Methode entscheidet, ob es sich bei der Eingabe um:
+        - eine reine URL zu einem Nachrichtenartikel oder
+        - um bereits vorliegenden Artikeltext
+
+        handelt und leitet entsprechend die weitere Verarbeitung ein.
+
+        Ablauf:
+        1. Prüfung, ob der Input ausschließlich aus einer URL besteht
+        2. Falls URL: Extraktion über FUNDUS
+        3. Falls kein Link: Behandlung als Rohtext
+        4. Rückgabe eines einheitlichen Ergebnisobjekts
+
+        :param user_input: Eingabetext aus dem Frontend (URL oder Artikeltext)
+        :return: Dict[str, Any]:
+                {
+                    "success": bool,
+                    "input_type": "url" | "text",
+                    "publisher": str | None,
+                    "title": str | None,
+                    "text": str | None,
+                    "error": str | None
+                }
+        """
+
+        if not user_input or not user_input.strip():
+            return {
+                "success": False,
+                "input_type": None,
+                "publisher": None,
+                "title": None,
+                "text": None,
+                "error": "Leere Eingabe.",
+            }
+
+        user_input = user_input.strip()
+
+        # ---------------------------------------------------------
+        # Fall 1: Eingabe ist ein reiner Link → Artikel extrahieren
+        # ---------------------------------------------------------
+        if self._is_pure_url(user_input):
+            return self._extract_article_with_fundus(user_input)
+
+        # ---------------------------------------------------------
+        # Fall 2: Eingabe ist kein Link → als Artikeltext behandeln
+        # ---------------------------------------------------------
+        return {
+            "success": True,
+            "input_type": "text",
+            "publisher": None,
+            "title": None,
+            "text": user_input,
+            "error": None,
+        }
+
+
 # Test Extraktion eines Artikels
 extractor = ArticleExtractor()
-print(extractor.extract_article_with_fundus('https://www.golem.de/news/science-fiction-neuer-star-trek-film-von-den-dungeons-dragons-machern-2511-202218.html'))
+print(extractor.process('https://www.golem.de/news/science-fiction-neuer-star-trek-film-von-den-dungeons-dragons-machern-2511-202218.html'))
+
