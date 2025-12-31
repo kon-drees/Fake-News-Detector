@@ -12,13 +12,20 @@ from app.pipelines.gossipcop_pipeline import GossipCopPipeline
 
 
 class DataService:
+    """
+    Orchestrator for the ETL-Process.
+    This service manages multiple data pipelines, ensures data quality through validation,
+    and handles the ingestion of processed news articles into MongoDB.
+    """
+
+    # Registry of available data pipelines.
     PIPELINES = {
         "germannews": GermanNewsPipeline,
         "germanfakenc": GermanFakeNCPipeline,
         "welfake": WelfakePipeline,
         "webzio": WebzioPipeline,
         "germa": GermaPipeline,
-        #"gossipcop": GossipCopPipeline,
+        # "gossipcop": GossipCopPipeline,
     }
 
     def __init__(self) -> None:
@@ -26,6 +33,9 @@ class DataService:
 
     @staticmethod
     def validate_df(df: pd.DataFrame, dataset: str) -> None:
+        """
+        Enforces a schema for all datasets before database ingestion.
+        """
         if df is None or df.empty:
             raise ValueError(f"[DataService] No data found for {dataset}")
 
@@ -36,6 +46,10 @@ class DataService:
             )
 
     def import_to_mongo(self, pipeline: BaseDataPipeline) -> None:
+        """
+        Executes a single pipeline and stores the result in MongoDB.
+        Uses a full refresh, where all existing records of this dataset are deleted.
+        """
         df = pipeline.process_data()
         dataset = pipeline.dataset_name
 

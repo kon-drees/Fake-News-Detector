@@ -5,12 +5,17 @@ from app.core.config import Settings
 
 
 class Database:
+    """
+    Manager for MongoDB connections and collection access.
+    """
+
     _client: MongoClient = None
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
     def _get_client(self) -> MongoClient:
+        # Ensure a single connection is used across the instance.
         if self._client is None:
             self._client = MongoClient(self.settings.MONGO_URL)
 
