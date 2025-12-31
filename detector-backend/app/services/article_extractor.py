@@ -29,18 +29,19 @@ from fundus.publishers import PublisherCollection, Publisher, PublisherGroup
 
 
 class ArticleExtractor:
-    def __init__(self) -> None:
+    def __init__(self, supported_languages: set) -> None:
         """
         Initialisiert den ArticleExtractor.
 
         Beim Erzeugen der Instanz wird einmalig eine Lookup-Struktur aufgebaut,
         welche registrierbare Domains (z. B. 'spiegel.de') den entsprechenden
-        FUNDUS-Publishern zuordnet. Diese Vorverarbeitung ermöglicht eine
-        effiziente Publisher-Erkennung mit konstanter Zugriffszeit (O(1))
-        bei späteren Anfragen.
+        FUNDUS-Publishern zuordnet. Zudem werden nur Publisher berücksichtigt,
+        die auch Artikel in unterstützten Sprachen des Detectors veröffentlichen.
         """
+        self._supported_languages = supported_languages
         self._publisher_map: Dict[str, Publisher] = {}
         self._build_publisher_map()
+
 
     def _build_publisher_map(self) -> None:
         """
@@ -58,6 +59,9 @@ class ArticleExtractor:
 
         for entry in PublisherCollection:
             # PublisherCollection kann einzelne Publisher oder PublisherGroups enthalten
+            if entry.languages.isdisjoint(self._supported_languages):
+                continue
+
             if isinstance(entry, PublisherGroup):
                 publishers = entry.publishers
             else:
@@ -309,6 +313,7 @@ class ArticleExtractor:
 
 
 # Test Extraktion eines Artikels
-extractor = ArticleExtractor()
+supported_languages = {"de", "en"}
+extractor = ArticleExtractor(supported_languages)
 print(extractor.process('https://www.golem.de/news/science-fiction-neuer-star-trek-film-von-den-dungeons-dragons-machern-2511-202218.html'))
 
