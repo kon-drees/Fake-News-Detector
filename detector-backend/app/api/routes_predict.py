@@ -3,8 +3,10 @@ from fastapi import APIRouter, HTTPException, Request
 from app.domain import Label
 from app.schemas import PredictionResponse, TextRequest
 from app.api.dependencies import get_detector
+from app.core.logging_config import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.post("/predict", response_model=PredictionResponse)
@@ -27,4 +29,5 @@ async def predict(request: TextRequest, req: Request) -> PredictionResponse:
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("Prediction failed")
         raise HTTPException(status_code=500, detail=str(e))
