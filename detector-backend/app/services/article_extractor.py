@@ -59,8 +59,6 @@ class ArticleExtractor:
 
         for entry in PublisherCollection:
             # PublisherCollection kann einzelne Publisher oder PublisherGroups enthalten
-            if entry.languages.isdisjoint(self._supported_languages):
-                continue
 
             if isinstance(entry, PublisherGroup):
                 publishers = entry.publishers
@@ -68,6 +66,9 @@ class ArticleExtractor:
                 publishers = [entry]
 
             for publisher in publishers:
+                if publisher.languages.isdisjoint(self._supported_languages):
+                    continue
+
                 domains = publisher.domain
 
                 # FUNDUS erlaubt Domains sowohl als String als auch als Liste
@@ -75,6 +76,11 @@ class ArticleExtractor:
                     domains = [domains]
 
                 for domain in domains:
+
+                    # Ungültige oder unvollständige Domains überspringen
+                    if not extracted.domain or not extracted.suffix:
+                        continue
+
                     # Extraktion der registrierbaren Root-Domain
                     extracted = tldextract.extract(domain)
 
@@ -153,6 +159,11 @@ class ArticleExtractor:
 
         # Normalisierung der Host-Domain auf registrierbare Root-Domain
         extracted = tldextract.extract(hostname)
+
+        # Falls Domain oder Suffix fehlen, kann keine gültige Root-Domain gebildet werden
+        if not extracted.domain or not extracted.suffix:
+            return None
+
         root_domain = f"{extracted.domain}.{extracted.suffix}"
 
         # Direkter Lookup im Dictionary (O(1))
@@ -273,7 +284,7 @@ class ArticleExtractor:
         :return: Dict[str, Any]:
                 {
                     "success": bool,
-                    "input_type": "url" | "text",
+                    "input_type": "url" | "multi_url" | "text" | None,
                     "publisher": str | None,
                     "title": str | None,
                     "text": str | None,
@@ -295,27 +306,33 @@ class ArticleExtractor:
         lines = [line.strip() for line in user_input.splitlines() if line.strip()]
 
         # ---------------------------------------------------------
-        # Fall 1: Mehrere Zeilen → prüfen, ob alle URLs
+        # Fall 1: Mehrere Zeilen → prüfen, ob alle Zeilen URLs sind und zum gleichen Publisher gehören
         # ---------------------------------------------------------
         if len(lines) > 1 and all(self._is_pure_url(line) for line in lines):
             combined_text = []
             errors = []
             title = None
+            publisher = None
             result = None
 
             for line in lines:
                 result = self._extract_article_with_fundus(line)
-                if title is None:
-                    title = result["title"]
+
                 if result["success"] and result["text"]:
+
+                    if title is None and publisher is None:
+                        title = result["title"]
+                        publisher = result["publisher"]
+
                     combined_text.append(result["text"])
+
                 if result["error"]:
                     errors.append(f"{line}: {result['error']}")
 
             return {
-                "success": len(combined_text) > 0,
+                "success": (len(combined_text) > 0 and len(errors) == 0),
                 "input_type": "multi_url",
-                "publisher": result["publisher"],
+                "publisher": publisher,
                 "title": title,
                 "text": "\n\n".join(combined_text) if combined_text else None,
                 "error": "\n".join(errors) if errors else None,
@@ -328,7 +345,7 @@ class ArticleExtractor:
             return self._extract_article_with_fundus(user_input)
 
         # ---------------------------------------------------------
-        # Fall 2: Eingabe ist kein Link → als Artikeltext behandeln
+        # Fall 3: Eingabe ist kein Link → als Artikeltext behandeln
         # ---------------------------------------------------------
         return {
             "success": True,
@@ -341,7 +358,8 @@ class ArticleExtractor:
 
 
 # Test Extraktion eines Artikels
-supported_languages = {"de", "en"}
-extractor = ArticleExtractor(supported_languages)
-print(extractor.process('https://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617.html\nhttps://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617-2.html'))
+if __name__ == "__main__":
+    supported_languages = {"de", "en"}
+    extractor = ArticleExtractor(supported_languages)
+    print(extractor.process('https://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617.html\nhttps://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617-2.html'))
 
