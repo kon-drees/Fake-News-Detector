@@ -10,6 +10,8 @@ from app.api.routes_fact_check import router as fact_check_router
 from app.core.detector import FakeNewsDetector
 from app.core.fact_check_agent import FactCheckAgent
 from app.core.logging_config import configure_logging
+from app.domain import Language
+from app.services.article_extractor import ArticleExtractor
 
 
 # Disabling parallelism prevents deadlocks on macOS/Linux when
@@ -22,19 +24,26 @@ logger = configure_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Loading detector and fact checker")
+    logger.info("Loading detector, article extractor and fact checker")
     detector = FakeNewsDetector()
+    article_extractor = ArticleExtractor({Language.DE.value, Language.EN.value})
     fact_checker = FactCheckAgent()
-    logger.info("Detector and fact checker loaded")
+    logger.info("Detector, article extractor and fact checker loaded")
 
     model["detector"] = detector
+    model["article_extractor"] = article_extractor
     model["fact_checker"] = fact_checker
 
     app.state.detector = detector
+    app.state.article_extractor = article_extractor
     app.state.fact_checker = fact_checker
 
     try:
-        yield {"detector": detector, "fact_checker": fact_checker}
+        yield {
+            "detector": detector,
+            "article_extractor": article_extractor,
+            "fact_checker": fact_checker,
+        }
     finally:
         logger.info("Shutting down application state")
         model.clear()
