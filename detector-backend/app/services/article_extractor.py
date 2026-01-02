@@ -76,13 +76,14 @@ class ArticleExtractor:
                     domains = [domains]
 
                 for domain in domains:
+                    if not domain:
+                        continue
+
+                    extracted = tldextract.extract(domain)
 
                     # Ungültige oder unvollständige Domains überspringen
                     if not extracted.domain or not extracted.suffix:
                         continue
-
-                    # Extraktion der registrierbaren Root-Domain
-                    extracted = tldextract.extract(domain)
 
                     # Zusammensetzen der Root-Domain (z. B. 'spiegel.de')
                     root_domain = f"{extracted.domain}.{extracted.suffix}"
@@ -362,4 +363,3 @@ if __name__ == "__main__":
     supported_languages = {"de", "en"}
     extractor = ArticleExtractor(supported_languages)
     print(extractor.process('https://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617.html\nhttps://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617-2.html'))
-
