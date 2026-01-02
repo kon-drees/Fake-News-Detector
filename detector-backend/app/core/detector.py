@@ -78,22 +78,30 @@ class FakeNewsDetector:
         Scores are normalized against the maximum absolute value to allow for
         consistent heatmapping in the frontend.
         """
-        explainer = self.choose_language(text, return_element="explainer")
+        pipe = self.choose_language(text, return_element="pipe")
+        text_for_explainer = self._truncate_text_for_model(text, pipe)
+        explainer = self.choose_language(text_for_explainer, return_element="explainer")
 
         # This call is computationally expensive as it requires multiple inference passes to calculate Shapley values.
         try:
-            shap_values = explainer([text])
+            shap_values = explainer([text_for_explainer])
         except Exception as exc:
             raise HTTPException(
                 status_code=500, detail=f"Could not generate highlights: {exc}"
             ) from exc
 
         # Get the predicted label
-        prediction = self.predict(text)
+        prediction = self.predict(text_for_explainer)
         target_class = 0 if prediction.label == Label.FAKE else 1
 
         tokens = shap_values.data[0]
         values = shap_values.values[0, :, target_class]
+        if len(values) == 0:
+            raise HTTPException(
+                status_code=500,
+                detail="Could not generate highlights: model returned no attributions.",
+            )
+
         # Find max value for normalization
         max_abs_value = max([abs(v) for v in values])
 
@@ -106,10 +114,31 @@ class FakeNewsDetector:
             highlights.append(TokenContribution(token, score, score_normalized))
 
         highlights = FakeNewsDetector.merge_tokens_to_words(
-            original_text=text, highlights=highlights
+            original_text=text_for_explainer, highlights=highlights
         )
 
         return highlights
+
+    @staticmethod
+    def _truncate_text_for_model(text: str, pipe: Pipeline, max_length: int = 512) -> str:
+        """
+        Truncates text using the pipeline tokenizer to keep SHAP computation stable.
+        Falls back to the original text if tokenization fails.
+        """
+        tokenizer = getattr(pipe, "tokenizer", None)
+        if tokenizer is None:
+            return text
+
+        try:
+            encoded = tokenizer.encode(
+                text,
+                truncation=True,
+                max_length=max_length,
+                add_special_tokens=True,
+            )
+            return tokenizer.decode(encoded, skip_special_tokens=True)
+        except Exception:
+            return text
 
     @staticmethod
     def merge_tokens_to_words(
