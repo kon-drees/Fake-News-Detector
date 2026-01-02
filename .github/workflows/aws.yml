@@ -8,6 +8,10 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
+
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
@@ -45,6 +49,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+
       - name: Prune after backend build
         run: |
           docker builder prune -af || true
@@ -69,19 +74,31 @@ jobs:
     needs: build_and_push
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH (pull + restart)
+      - name: Deploy via SSH
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          set -e
+          set -euo pipefail
+
           mkdir -p ~/.ssh
           echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.LIGHTSAIL_HOST }}" >> ~/.ssh/known_hosts
 
+          cat > .env.prod <<EOF
+          OPENAI_API_KEY=${OPENAI_API_KEY}
+          LOG_LEVEL=INFO
+          EOF
+
+          scp -o StrictHostKeyChecking=yes .env.prod \
+            "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/home/deploy/app/.env.prod"
+
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
             "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" << 'EOF'
-            set -e
+            set -euo pipefail
             cd /home/deploy/app
 
+            chmod 600 .env.prod
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --force-recreate
             docker image prune -f
