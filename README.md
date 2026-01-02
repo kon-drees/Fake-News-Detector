@@ -1,13 +1,13 @@
 # Fake News Detector
 
-A fullstack Fake News Detector using FastAPI as backend and Svelte/Vite as frontend for scoring news, highlighting token contributions, and a fact-checking agent. 
+A fullstack Fake News Detector using FastAPI as backend and Svelte as frontend for scoring news, highlighting token contributions, and a fact-checking agent. 
 
 
 ## Features
 - Transformer classifier (EN/DE) using a BERT model. The model is trained with real Data.
-- Token highlighting.
+- Word highlighting.
 - Fact-check agent using `pydantic-ai` 
-- Svelte  with per token highlighting, classifications, and fact-checks.
+- Svelte with per Word highlighting, classifications, and fact-checks.
 - Docker setup with Nginx 
 - Optional Mongo pipelines and dataset URLs for data ingestion and training.
 
