@@ -173,9 +173,8 @@
             {#each factCheckRes.checked_claims as claim}
               <div class="claim-card">
                 <p><strong>Claim:</strong> {claim.claim}</p>
-                <p><strong>Verdict:</strong> 
-                  <span class="verdict-tag">{claim.verdict || claim.label || 'See details'}</span>
-                </p>
+                <p><strong>Result:</strong> {claim.assessment}</p>
+                <p><strong>Reasoning:</strong> {claim.reasoning}</p>
               </div>
             {/each}
           </div>

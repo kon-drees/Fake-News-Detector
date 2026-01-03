@@ -116,6 +116,9 @@ body {
   box-shadow: 0 4px 10px rgba(0,0,0,0.4);
 }
 
+.claim-card {
+  padding: 1rem;
+}
 .divider {
   margin: 2rem 0;
   border: 0;
