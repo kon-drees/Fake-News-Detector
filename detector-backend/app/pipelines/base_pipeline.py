@@ -6,6 +6,10 @@ from app.services.language_service import LanguageDetectionService
 
 
 class BaseDataPipeline(ABC):
+    """
+    Abstract base class defining the blueprint for dataset processing.
+    """
+
     def __init__(self, dataset_name: str):
         self.dataset_name = dataset_name
         self.lang_service = LanguageDetectionService()
@@ -26,11 +30,13 @@ class BaseDataPipeline(ABC):
         try:
             df = self._load_data()
         except FileNotFoundError:
+            # prevents the entire training batch from crashing if one file is missing.
             print(
                 f"[{self.__class__.__name__}] Could not find the file for {self.dataset_name}."
             )
             return None
 
+        # Execute the specific transformations defined in the subclass
         processed_df = self._run_processing(df)
 
         processed_df["dataset"] = self.dataset_name

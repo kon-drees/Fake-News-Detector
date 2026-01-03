@@ -11,7 +11,13 @@ from app.domain import Label
 
 
 class FakeNewsDetector:
+    """
+    Core detector service providing multi-language fake news classification
+    and token-level interpretability via SHAP explainers.
+    """
+
     def __init__(self):
+        # Initialize pipelines for each supported language.
         self.pipe_en = pipeline(
             "text-classification",
             "Lennywinks/fake-news-detector-english",
@@ -22,6 +28,7 @@ class FakeNewsDetector:
             "Lennywinks/fake-news-detector-german",
             device=0 if torch.cuda.is_available() else -1,
         )
+        # SHAP Explainers take the pipeline as input to calculate feature importance for specific text tokens.
         self.explainer_en = Explainer(self.pipe_en)
         self.explainer_de = Explainer(self.pipe_de)
         self.language_detector = LanguageDetectionService()
@@ -29,6 +36,11 @@ class FakeNewsDetector:
     def choose_language(
         self, text: str, return_element: Literal["pipe", "explainer"]
     ) -> Pipeline | Explainer:
+        """
+        Routes the input text to the appropriate model based on language detection.
+        Strictly enforces English or German support. If a different language is
+        detected, a 422 error is raised to prevent invalid inference results.
+        """
         if self.language_detector.is_english(text):
             pipe = self.pipe_en
             explainer = self.explainer_en
@@ -45,6 +57,9 @@ class FakeNewsDetector:
         return pipe if return_element == "pipe" else explainer
 
     def predict(self, text: str) -> PredictionResult:
+        """
+        Executes a classification pass on the input text.
+        """
         pipe = self.choose_language(text, return_element="pipe")
 
         result = pipe(text, truncation=True, max_length=512)
@@ -56,40 +71,111 @@ class FakeNewsDetector:
         return PredictionResult(label=label, score=score)
 
     def highlight(self, text: str) -> List[TokenContribution]:
-        explainer = self.choose_language(text, return_element="explainer")
+        """
+        Calculates the contribution of each token to the classification result.
 
+        Uses SHAP (SHapley Additive exPlanations) to assign importance scores.
+        Scores are normalized against the maximum absolute value to allow for
+        consistent heatmapping in the frontend.
+        """
+        pipe = self.choose_language(text, return_element="pipe")
+        text_for_explainer = self._truncate_text_for_model(text, pipe)
+        explainer = self.choose_language(text_for_explainer, return_element="explainer")
+
+        # This call is computationally expensive as it requires multiple inference passes to calculate Shapley values.
         try:
-            shap_values = explainer([text])
+            shap_values = explainer([text_for_explainer])
         except Exception as exc:
             raise HTTPException(
                 status_code=500, detail=f"Could not generate highlights: {exc}"
             ) from exc
 
-        # Always explain the values for label fake -> Positive value: fake, Negative value: real
-        target_class = 0
+        # Get the predicted label
+        prediction = self.predict(text_for_explainer)
+        target_class = 0 if prediction.label == Label.FAKE else 1
 
-        if not hasattr(shap_values, "data") or not hasattr(shap_values, "values"):
-            return []
+        tokens = shap_values.data[0]
+        values = shap_values.values[0, :, target_class]
+        if len(values) == 0:
+            raise HTTPException(
+                status_code=500,
+                detail="Could not generate highlights: model returned no attributions.",
+            )
 
-        tokens = shap_values.data[0] if len(shap_values.data) else []
-        values = shap_values.values
-
-        try:
-            values = values[0, :, target_class]
-        except Exception:
-            values = values[0] if len(values) else []
+        # Find max value for normalization
+        max_abs_value = max([abs(v) for v in values])
 
         highlights = []
-
-        token_value_pairs = [
-            (str(token), float(score))
-            for token, score in zip(tokens, values)
-            if str(token).strip() != ""
-        ]
-        max_abs_value = max((abs(v) for _, v in token_value_pairs), default=0.0) or 1.0
-
-        for token, score in token_value_pairs:
-            score_normalized = score / max_abs_value
+        for token, score in zip(tokens, values):
+            if token.strip() == "":
+                continue
+            # 0.0 / 0.0 = nan -> Might be the case for small text inputs and causes a crash later on.
+            score_normalized = score / max_abs_value if max_abs_value > 0 else 0.0
             highlights.append(TokenContribution(token, score, score_normalized))
 
+        highlights = FakeNewsDetector.merge_tokens_to_words(
+            original_text=text_for_explainer, highlights=highlights
+        )
+
         return highlights
+
+    @staticmethod
+    def _truncate_text_for_model(text: str, pipe: Pipeline, max_length: int = 512) -> str:
+        """
+        Truncates text using the pipeline tokenizer to keep SHAP computation stable.
+        Falls back to the original text if tokenization fails.
+        """
+        tokenizer = getattr(pipe, "tokenizer", None)
+        if tokenizer is None:
+            return text
+
+        try:
+            encoded = tokenizer.encode(
+                text,
+                truncation=True,
+                max_length=max_length,
+                add_special_tokens=True,
+            )
+            return tokenizer.decode(encoded, skip_special_tokens=True)
+        except Exception:
+            return text
+
+    @staticmethod
+    def merge_tokens_to_words(
+        original_text: str, highlights: List[TokenContribution]
+    ) -> List[TokenContribution]:
+        words = original_text.split()
+        merged_results = []
+        token_ptr = 0
+
+        for word in words:
+            buffer = []
+            accumulated_str = ""
+
+            # Match each to token, till the word is complete
+            while token_ptr < len(highlights):
+                h = highlights[token_ptr]
+                clean_token = h.token.strip()
+
+                # Skip if token is empty
+                if not clean_token and h.token:
+                    token_ptr += 1
+                    continue
+
+                accumulated_str += clean_token
+                buffer.append(h)
+                token_ptr += 1
+
+                if len(accumulated_str) >= len(word):
+                    break
+
+            # Aggregate TokenContributions
+            if buffer:
+                avg_score = sum(t.score for t in buffer) / len(buffer)
+                avg_norm = sum(t.score_normalized for t in buffer) / len(buffer)
+
+                merged_results.append(
+                    TokenContribution(word, float(avg_score), float(avg_norm))
+                )
+
+        return merged_results

@@ -13,6 +13,8 @@ services:
     build:
       context: ./detector-backend
       dockerfile: Dockerfile
+    env_file:
+      - ./detector-backend/.env
     environment:
       MONGO_URL: mongodb://mongo:27017
       MONGO_DB_NAME: fakenews
@@ -26,7 +28,6 @@ services:
       context: ./detector-frontend
       dockerfile: Dockerfile
       args:
-        # Browser calls same host; nginx proxies /api to backend
         VITE_API_URL: /api
     depends_on:
       - backend
