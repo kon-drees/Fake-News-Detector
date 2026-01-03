@@ -7,7 +7,13 @@ from app.domain import PredictionResult, TokenContribution
 
 
 class TextRequest(BaseModel):
-    text: Annotated[str, Query(min_length=10)]
+    text: Annotated[
+        str,
+        Query(
+            min_length=5,
+            description="Plain text content or one/multiple article URLs (one per line).",
+        ),
+    ]
 
 
 # /predict

@@ -4,11 +4,13 @@ from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.models.test import TestModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from app.schemas import FactCheckResponse, TextRequest
+from app.schemas import FactCheckResponse
 from app.core.config import Settings
+from app.core.logging_config import get_logger
 
 settings = Settings()
 
+logger = get_logger(__name__)
 
 class FactCheckAgent:
     """
@@ -33,8 +35,8 @@ class FactCheckAgent:
         """
         api_key = settings.OPENAI_API_KEY
 
-        # Heuristic to check for a valid OpenAI key format
         if not api_key or len(api_key) < 30:
+            logger.warning("No Key found")
             return TestModel()
 
         return OpenAIResponsesModel(
@@ -50,11 +52,11 @@ class FactCheckAgent:
         with open(settings.BASE_DIR / "core" / "fact_check_instructions.md", "r") as f:
             return f.read()
 
-    async def run_fact_check(self, request: TextRequest) -> FactCheckResponse:
+    async def run_fact_check(self, text: str) -> FactCheckResponse:
         """
         Analyzes a given text for factual accuracy using an LLM agent.
         This method triggers an asynchronous call to OpenAI.
         """
-        result = await self.agent.run(request.text)
+        result = await self.agent.run(text)
 
         return result.output

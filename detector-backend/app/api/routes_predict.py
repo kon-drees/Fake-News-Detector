@@ -2,7 +2,11 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.domain import Label
 from app.schemas import PredictionResponse, TextRequest
-from app.api.dependencies import get_detector
+from app.api.dependencies import (
+    extract_article_text_or_raise,
+    get_article_extractor,
+    get_detector,
+)
 from app.core.logging_config import get_logger
 
 router = APIRouter()
@@ -17,9 +21,12 @@ async def predict(request: TextRequest, req: Request) -> PredictionResponse:
     """
     # Access the detector initialized in the app's lifespan
     detector = get_detector(req)
+    article_extractor = get_article_extractor(req)
+
+    article_text = extract_article_text_or_raise(article_extractor, request.text)
 
     try:
-        result = detector.predict(request.text)
+        result = detector.predict(article_text)
 
         fake_score = (
             result.score if result.label == Label.FAKE else round(1 - result.score, 4)
