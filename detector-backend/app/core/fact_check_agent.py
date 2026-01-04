@@ -27,7 +27,7 @@ class FactCheckAgent:
         self.agent = Agent(
             model=self.model,
             output_type=FactCheckResponse,
-            tools=[duckduckgo_search_tool()],
+            tools=[duckduckgo_search_tool(max_results=12)],
             instructions=FactCheckAgent.load_instructions(),
         )
 
