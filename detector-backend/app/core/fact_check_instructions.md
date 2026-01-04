@@ -34,3 +34,4 @@ Extract 1-3 main claims from the text and verify them based on logic and general
 
 # Final Instruction
 Remain objective. Do not judge based on political stance, but solely on the **verifiability**, **logic**, and **journalistic standards** of the text.
+Reply in the same language as the input text.
