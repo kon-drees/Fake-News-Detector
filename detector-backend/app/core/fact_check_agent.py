@@ -1,8 +1,10 @@
 from pydantic_ai import Agent
+from pydantic_ai.common_tools.duckduckgo import duckduckgo_search_tool
 from pydantic_ai.models import Model
 from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.models.test import TestModel
 from pydantic_ai.providers.openai import OpenAIProvider
+
 
 from app.schemas import FactCheckResponse
 from app.core.config import Settings
@@ -25,6 +27,7 @@ class FactCheckAgent:
         self.agent = Agent(
             model=self.model,
             output_type=FactCheckResponse,
+            tools=[duckduckgo_search_tool()],
             instructions=FactCheckAgent.load_instructions(),
         )
 
