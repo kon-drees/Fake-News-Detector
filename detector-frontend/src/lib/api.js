@@ -12,7 +12,7 @@ export async function predict(text) {
         });
 
         if (!res.ok) {
-            throw new Error("failed to fetch prediction results");
+            throw new Error(`failed to fetch prediction results: ${res.status} ${res.statusText}`);
         }
 
         const prediction = await res.json();
@@ -36,11 +36,35 @@ export async function highlight(text) {
         });
 
         if (!res.ok) {
-            throw new Error("failed to fetch highlight results");
+            throw new Error(`failed to fetch highlight results: ${res.status} ${res.statusText}`);
         }
 
         const highlight = await res.json();
         return highlight;
+
+    } catch (error) {
+        console.error(error.message);
+        throw error;
+    }
+}
+
+export async function factCheck(text) {
+    const headers = { "Content-Type": "application/json" };
+    const body = JSON.stringify({ text });
+
+    try {
+        const res = await fetch(`${API_URL}/fact-check`, {
+            method: "POST",
+            headers,
+            body
+        });
+
+        if (!res.ok) {
+            throw new Error(`failed to fetch fact-checking results: ${res.status} ${res.statusText}`);
+        }
+
+        const factcheckres = await res.json();
+        return factcheckres;
 
     } catch (error) {
         console.error(error.message);
