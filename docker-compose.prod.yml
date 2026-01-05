@@ -1,9 +1,9 @@
 services:
   backend:
     image: ghcr.io/kon-drees/fake-news-detector-backend:latest
-    restart: always
     env_file:
-      - .env.prod
+      - ./.env.prod
+    restart: always
     expose:
       - "8000"
 

@@ -84,11 +84,8 @@ jobs:
           echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.LIGHTSAIL_HOST }}" >> ~/.ssh/known_hosts
-
-          cat > .env.prod <<EOF
-          OPENAI_API_KEY=${OPENAI_API_KEY}
-          LOG_LEVEL=INFO
-          EOF
+          
+          printf 'OPENAI_API_KEY=%s\nLOG_LEVEL=INFO\n' "$OPENAI_API_KEY" > .env.prod
 
           scp -o StrictHostKeyChecking=yes .env.prod \
             "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/home/deploy/app/.env.prod"
