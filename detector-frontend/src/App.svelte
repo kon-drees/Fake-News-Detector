@@ -127,7 +127,11 @@
 
 <main id="app-container">
   <header class="top-header">
-    <h1 class="title">Fake News Detector</h1>
+    <div class="branding">
+      <img id="logoicon" src="fake-news-detector-icon.png" alt="logo">
+      <h1 class="title">Fake News Detector</h1>
+    </div>
+    
     <button class="info-btn" onclick={() => showModal = true} aria-label="Information">
       <i>i</i>
     </button>

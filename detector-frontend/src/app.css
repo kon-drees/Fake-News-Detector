@@ -23,8 +23,20 @@ body {
 .top-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: left;
   margin-bottom: 1.5rem;
+}
+
+.branding {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+#logoicon {
+  font-size: 2rem;
+  height: 1.5em;
+  width: auto;
 }
 
 .title {
