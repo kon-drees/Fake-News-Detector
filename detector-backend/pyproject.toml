@@ -9,9 +9,11 @@ description = "Fake News Detection backend API"
 requires-python = ">=3.13"
 dependencies = [
   "beautifulsoup4>=4.14.2",
+  "ddgs>=1.0.0",
   "fastapi>=0.121.1",
   "lingua-language-detector>=2.1.1",
   "pandas>=2.3.3",
+  "duckduckgo-search>=6.3.0",
   "pydantic-ai>=1.38.0",
   "pymongo>=4.15.4",
   "pydantic-settings>=2.12.0",

@@ -49,7 +49,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-
       - name: Prune after backend build
         run: |
           docker builder prune -af || true
@@ -74,7 +73,9 @@ jobs:
     needs: build_and_push
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH (upload compose + env, then pull + restart)
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
@@ -85,21 +86,35 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.LIGHTSAIL_HOST }}" >> ~/.ssh/known_hosts
 
-          cat > .env.prod <<EOF
-          OPENAI_API_KEY=${OPENAI_API_KEY}
-          LOG_LEVEL=INFO
-          EOF
+          # .env.prod lokal erzeugen (wird nicht committed)
+          printf 'OPENAI_API_KEY=%s\nLOG_LEVEL=INFO\n' "$OPENAI_API_KEY" > .env.prod
+          chmod 600 .env.prod
+
+          # Zielordner sicherstellen
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
+            "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" \
+            "mkdir -p /home/deploy/app"
+
+          # Compose + env auf die VM kopieren
+          scp -o StrictHostKeyChecking=yes docker-compose.prod.yml \
+            "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/home/deploy/app/docker-compose.prod.yml"
 
           scp -o StrictHostKeyChecking=yes .env.prod \
             "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/home/deploy/app/.env.prod"
 
+          # Deploy auf der VM
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
             "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" << 'EOF'
             set -euo pipefail
             cd /home/deploy/app
 
             chmod 600 .env.prod
+
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --force-recreate
+
             docker image prune -f
+
+            docker compose -f docker-compose.prod.yml config | sed -n '/backend:/,/frontend:/p'
+            docker compose -f docker-compose.prod.yml exec -T backend sh -lc 'echo "KEYLEN=${#OPENAI_API_KEY}"; echo "LOG_LEVEL=$LOG_LEVEL"'
           EOF
