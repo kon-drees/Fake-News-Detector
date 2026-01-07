@@ -128,7 +128,7 @@
 <main id="app-container">
   <header class="top-header">
     <div class="branding">
-      <img id="logoicon" src="public/fake-news-detector-icon.png" alt="logo">
+      <img id="logoicon" src="fake-news-detector-icon.png" alt="logo">
       <h1 class="title">Fake News Detector</h1>
     </div>
     
