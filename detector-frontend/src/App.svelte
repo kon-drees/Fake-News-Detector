@@ -18,11 +18,16 @@
   let predictionCategory = $state(null);
   let score = $state(null);
 
+  let textOfLastRequest = ''
+
   async function factcheck(){
     error = '';
     if (text.length < 10) {
       error = 'Please input a text of minimum ten characters.';
       return;
+    }
+    if (!isTextSameAsLastRequest()) {
+      predictRes = null;
     }
 
     factCheckRes = null;
@@ -35,13 +40,17 @@
     } finally {
       isFactChecking = false;
     }
+    textOfLastRequest = text;
   }
-
   async function analyze() {
     error = '';
     if (text.length < 10) {
       error = 'Please input a text of minimum ten characters.';
       return;
+    }
+
+    if (!isTextSameAsLastRequest()) {
+      factCheckRes = null;
     }
 
     predictRes = null;
@@ -52,8 +61,7 @@
     showHighlights = wantsHighlights;
     isAnalyzing = true;
 
-    const predictPromise = predict(text);
-    const highlightPromise = showHighlights ? highlight(text) : null;
+    const predictPromise = predict(text);    const highlightPromise = showHighlights ? highlight(text) : null;
 
     try {
       predictRes = await predictPromise;
@@ -76,6 +84,7 @@
       }
     }
     isAnalyzing = false;
+    textOfLastRequest = text;
   }
 
   function autoResize(element) {
@@ -84,14 +93,16 @@
     el.style.height = el.scrollHeight + 'px';
   }
 
+ 
   function valueToBackground(value, predictionCategory) {
     if (!value) return 'transparent';
+
     const intensity = Math.min(Math.abs(value), 1);
-    if (predictionCategory === 'real') {
-      return `rgba(210, 0, 0, ${intensity})` 
-    }
-    else {
-      return `rgba(0, 210, 0, ${intensity})`
+
+    if (value < 0) {
+      return `rgba(210, 0, 0, ${intensity})`;
+    } else {
+      return `rgba(0, 210, 0, ${intensity})`;
     }
   }
 
@@ -103,6 +114,14 @@
     if (score < 0.3) return '#4caf50'; // Green
     if (score < 0.7) return '#ff9800'; // Orange
     return '#ff5555'; // Red
+  }
+
+  function isTextSameAsLastRequest() {
+    if (text === textOfLastRequest) {
+      return true;
+    } else{
+      return false;
+    }
   }
 </script>
 
@@ -198,6 +217,7 @@
         <button class="tile-close-btn" onclick={() => predictRes = null} aria-label="Close">&times;</button>
 
         <h2>Prediction Result</h2>
+        <hr class="divider" />
         <p><strong>Prediction:</strong> {predictionCategory}</p>
         <p><strong>Confidence Score:</strong> {(score * 100).toFixed(2)}%</p>
       </div>
@@ -212,7 +232,6 @@
           <span class="legend-green">Green</span> → Low fake news probability.<br>
           <span class="legend-red">Red</span> → High fake news probability.
         </p>
-        <hr class="divider" />
         <p class="highlighted-words">
           {#each highlightRes.highlights as token}
             <span class="highlight-word" style="background-color: {valueToBackground(token.score_normalized, predictionCategory)}">
