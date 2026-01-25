@@ -7,7 +7,7 @@
     autoResize 
   } from './lib/utils.js';
 
-  // STATE VARIABLES
+  // State variables
   let text = $state('');
   let error = $state('');
   let showModal = $state(false);
@@ -22,10 +22,18 @@
   let highlightRes = $state(null);
   let factCheckRes = $state(null);
   
-  let predictionCategory = $state(null);
-  let score = $state(null);
-
   let textOfLastRequest = '';
+
+  // Derived variables
+  let score = $derived(predictRes?.prediction_result?.score ?? 0);
+  
+  let predictionCategory = $derived(
+    predictRes?.prediction_result?.label 
+      ? capitalizeFirstLetter(predictRes.prediction_result.label)
+      : 'Unknown'
+  );
+
+  let isFakePrediction = $derived(predictionCategory === 'Fake');
 
   function validateInput() {
     if (text.length < 10) {
@@ -71,14 +79,17 @@
     isAnalyzing = true;
 
     try {
-      // Run prediction
+      // Run prediction fetching
       const pRes = await predict(text);
-      if (typeof pRes?.prediction_result.score !== 'number') {
+      
+      // Ensure specific path exists before assigning
+      if (typeof pRes?.prediction_result?.score !== 'number') {
         throw new Error('Invalid prediction response');
       }
+      
       predictRes = pRes;
 
-      // Run highlight if requested
+      // Run highlight fetching if requested
       if (showHighlights) {
         try {
           highlightRes = await highlight(text);
@@ -107,8 +118,8 @@
   </header>
 
   <div id="description-div">
-    The fake news detector uses an ai-agent for checking the actuallity of the provided content.
-    Analyzing utilizes a LLM to determine if the provided input is fake-news.
+    The fake news detector uses an AI agent for checking the factuality of the provided content.
+    Analyzing utilizes an LLM to determine if the provided input is fake-news.
     Highlighting shows what parts of the text were part of the reasoning for the resulting classification.
   </div>
 
@@ -200,12 +211,15 @@
         <button class="tile-close-btn" onclick={() => highlightRes = null} aria-label="Close">&times;</button>
         <h3>Prediction Reasoning</h3>
         <p class="highlight-legend">
-          <span class="legend-green">Green</span> → Low fake news probability.<br>
-          <span class="legend-red">Red</span> → High fake news probability.
+          <span class="legend-green">Green</span> → Low fake news probability (Real).<br>
+          <span class="legend-red">Red</span> → High fake news probability (Fake).
         </p>
         <p class="highlighted-words">
           {#each highlightRes.highlights as token}
-            <span class="highlight-word" style="background-color: {valueToBackground(token.score_normalized)}">
+            <span 
+              class="highlight-word" 
+              style="background-color: {valueToBackground(isFakePrediction ? (token.score_normalized * -1) : token.score_normalized)}"
+            >
               {token.token}
             </span>
           {/each}
@@ -217,8 +231,24 @@
   {#if showModal}
     <div class="modal-overlay" onclick={() => showModal = false} role="presentation">
        <div class="modal-content" onclick={(e) => e.stopPropagation()} role="dialog">
-            <button class="close-btn" onclick={() => showModal = false}>&times;</button>
-            </div>
+          <button class="close-btn" onclick={() => showModal = false}>&times;</button>
+          <h2>Instructions & Documentation</h2>
+          <p>This tool uses a binary machine learning classification to analyze the probability of a text being "Fake News".</p>
+          <ul>
+            <li><strong>Fact-Check:</strong> Uses an AI-Agent to fact-check the provided content by comparison to recent information in the web.</li>
+            <li><strong>Analyze:</strong> Sends your text to the model for analysis.</li>
+            <li><strong>Highlight:</strong> When enabled, specific words are color-coded based on their influence on the analysis result.</li>
+          </ul>
+          <p>Minimum input length is 10 characters. Links to news article websites are also accepted.</p>
+          <h2>Anleitungen & Dokumentation</h2>
+          <p>Dieses Tool verwendet eine binäre Machine-Learning-Klassifizierung, um die Wahrscheinlichkeit für einen Text zu analysieren, ob es sich um „Fake News“ handelt.</p>
+          <ul>
+            <li><strong>Fact-Check:</strong> Verwendet einen KI-Agenten, um den bereitgestellten Inhalt durch einen Abgleich mit aktuellen Informationen im Web zu überprüfen.</li>
+            <li><strong>Analyze:</strong> Sendet Ihren Text zur Analyse an das Modell.</li>
+            <li><strong>Highlight:</strong> Wenn aktiviert, werden bestimmte Wörter basierend auf ihrem Einfluss auf das Analyseergebnis farblich markiert.</li>
+          </ul>
+          <p>Die Mindesteingabelänge beträgt 10 Zeichen. Links zu Nachrichtenartikeln werden ebenfalls akzeptiert.</p>
+        </div>
     </div>
   {/if}
 </main>
