@@ -22,11 +22,17 @@ class FakeNewsDetector:
             "text-classification",
             "Lennywinks/fake-news-detector-english",
             device=0 if torch.cuda.is_available() else -1,
+            truncation=True,
+            padding=True,
+            max_length=512
         )
         self.pipe_de = pipeline(
             "text-classification",
             "Lennywinks/fake-news-detector-german",
             device=0 if torch.cuda.is_available() else -1,
+            truncation=True,
+            padding=True,
+            max_length=512
         )
         # SHAP Explainers take the pipeline as input to calculate feature importance for specific text tokens.
         self.explainer_en = Explainer(self.pipe_en)
@@ -65,7 +71,7 @@ class FakeNewsDetector:
         result = pipe(text, truncation=True, max_length=512)
         top_result = max(result, key=lambda x: x["score"])
 
-        label = Label.from_number(int(top_result["label"].split("_")[1]))
+        label = Label(top_result["label"])
         score = top_result["score"]
 
         return PredictionResult(label=label, score=score)

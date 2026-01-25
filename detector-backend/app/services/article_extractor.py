@@ -18,14 +18,17 @@ ZIEL:
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any, List
+from urllib.parse import urlparse
+
 import tldextract
 import validators
-from urllib.parse import urlparse
-from typing import Optional, Dict, Any, List
 
-from fundus import Crawler
-from fundus.scraping.filter import inverse, regex_filter
 from fundus.publishers import PublisherCollection, Publisher, PublisherGroup
+from fundus.scraping.article import Article
+from fundus.scraping.html import HTML, SourceInfo
+from fundus.scraping.session import session_handler
 
 
 class ArticleExtractor:
@@ -41,7 +44,6 @@ class ArticleExtractor:
         self._supported_languages = supported_languages
         self._publisher_map: Dict[str, Publisher] = {}
         self._build_publisher_map()
-
 
     def _build_publisher_map(self) -> None:
         """
@@ -173,7 +175,7 @@ class ArticleExtractor:
 
     def _extract_article_with_fundus(self, url: str) -> Dict[str, Any]:
         """
-         Extrahiert einen einzelnen Artikel mithilfe des FUNDUS-Crawlers.
+         Extrahiert einen einzelnen Artikel mithilfe des FUNDUS-Parsers.
 
         Obwohl FUNDUS als generalisierbarer Crawler ausgelegt ist, kann durch
         geschickte Nutzung eines inversen Regex-Filters erreicht werden, dass
@@ -183,9 +185,9 @@ class ArticleExtractor:
         Ablauf:
         1. URL parsen → Publisher-Domain bestimmen
         2. Publisher in FUNDUS identifizieren
-        3. Falls unbekannt → Fehlerobjekt zurückgeben
-        4. Inversen URL-Filter aufbauen (beschränkt Crawling auf die Ziel-URL)
-        5. Crawler initialisieren (threading=False → deterministisches Verhalten)
+        3. robots.txt prüfen
+        4. Artikel-HTML direkt abrufen
+        5. Passenden Parser anwenden
         6. Extrahierten Artikel zurückgeben
 
         :param url: Vollständige URL eines Nachrichtenartikels.
@@ -220,48 +222,77 @@ class ArticleExtractor:
             }
 
         # ---------------------------------------------------------
-        # 2. URL-Filter definieren
-        #
-        # Der regex_filter lässt *alle anderen* URLs zu.
-        # Mit inverse erhält FUNDUS effektiv nur die eine gewünschte Artikel-URL.
+        # 2. robots.txt prüfen (Fundus nutzt ebenfalls robots-Regeln)
         # ---------------------------------------------------------
-        escaped_path = re.escape(parsed.path)
-        url_filter = inverse(regex_filter(escaped_path))
-
-        # ---------------------------------------------------------
-        # 3. FUNDUS-Crawler vorbereiten
-        # threading=False verhindert parallele Konflikte
-        # ---------------------------------------------------------
-        crawler = Crawler(publisher, threading=False)
-
-        # ---------------------------------------------------------
-        # 4. Crawl-Vorgang ausführen
-        #
-        # Es wird nur der Artikel zurückgegeben, der mit der übergebenen URL übereinstimmt.
-        # ---------------------------------------------------------
-        for article in crawler.crawl(
-                url_filter=url_filter,
-                only_complete=False,  # unvollständige Artikel sind erlaubt
-        ):
+        user_agent = publisher.request_header.get("user-agent") or "*"
+        if publisher.robots and not publisher.robots.can_fetch(user_agent, url):
             return {
-                "success": True,
+                "success": False,
                 "input_type": "url",
                 "publisher": publisher.name,
-                "title": article.title,
-                "text": article.plaintext,
-                "error": None,
+                "title": None,
+                "text": None,
+                "error": "robots.txt erlaubt das Abrufen dieser URL nicht.",
             }
 
         # ---------------------------------------------------------
-        # 5. Falls FUNDUS keinen Artikel extrahieren konnte (z. B. Consent-Seite)
+        # 3. HTML direkt laden (kein Crawling durch RSS/Sitemaps)
         # ---------------------------------------------------------
+        session = session_handler.get_session()
+        try:
+            response = session.get_with_interrupt(url, headers=publisher.request_header)
+        except Exception as exc:
+            return {
+                "success": False,
+                "input_type": "url",
+                "publisher": publisher.name,
+                "title": None,
+                "text": None,
+                "error": f"Artikel konnte nicht geladen werden: {exc}",
+            }
+
+        html = HTML(
+            requested_url=url,
+            responded_url=str(response.url),
+            content=response.text,
+            crawl_date=datetime.now(timezone.utc),
+            source_info=SourceInfo(publisher.name),
+        )
+
+        # ---------------------------------------------------------
+        # 4. Parser auf Basis der neuesten Version anwenden
+        # ---------------------------------------------------------
+        try:
+            parser = publisher.parser()
+            extraction = parser.parse(html.content, error_handling="raise")
+        except Exception as exc:
+            return {
+                "success": False,
+                "input_type": "url",
+                "publisher": publisher.name,
+                "title": None,
+                "text": None,
+                "error": f"Artikel konnte nicht extrahiert werden: {exc}",
+            }
+
+        article = Article(html=html, **extraction)
+        if not article.plaintext:
+            return {
+                "success": False,
+                "input_type": "url",
+                "publisher": publisher.name,
+                "title": None,
+                "text": None,
+                "error": "Artikel konnte nicht extrahiert werden.",
+            }
+
         return {
-            "success": False,
+            "success": True,
             "input_type": "url",
             "publisher": publisher.name,
-            "title": None,
-            "text": None,
-            "error": "Artikel konnte nicht extrahiert werden.",
+            "title": article.title,
+            "text": article.plaintext,
+            "error": None,
         }
 
 
