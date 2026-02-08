@@ -1,17 +1,18 @@
 """
-Article Extraction Module (Fundus-based)
+Article Extraction Module
 ---------------------------------------
 
 Dieses Modul implementiert die Extraktion eines einzelnen Nachrichtenartikels
-mithilfe der Python-Bibliothek FUNDUS. FUNDUS enthält spezialisierte Parser
+mithilfe der Python-Bibliothek Fundus. Fundus enthält spezialisierte Parser
 für viele große Nachrichtenportale (z. B. Golem.de, Heise.de, Spiegel.de).
 
 ZIEL:
 - Eine URL entgegennehmen
 - Publisher anhand der Domain erkennen
 - Falls Publisher nicht unterstützt → Fehler zurückgeben
-- Falls unterstützt → Artikel über FUNDUS extrahieren
-- Nur den einen Artikel extrahieren (kein Crawling kompletter Websites!)
+- Falls unterstützt → Artikel über Fundus extrahieren
+- Keine Website-Crawls (keine RSS-/Sitemap-Verarbeitung), sondern gezielte
+  Extraktion einzelner, vom Nutzer übergebener URLs
 - Plaintext zurückgeben (für spätere Klassifikation im KI-Modul)
 """
 
@@ -73,7 +74,7 @@ class ArticleExtractor:
 
                 domains = publisher.domain
 
-                # FUNDUS erlaubt Domains sowohl als String als auch als Liste
+                # Fundus erlaubt Domains sowohl als String als auch als Liste
                 if isinstance(domains, str):
                     domains = [domains]
 
@@ -175,12 +176,12 @@ class ArticleExtractor:
 
     def _extract_article_with_fundus(self, url: str) -> Dict[str, Any]:
         """
-         Extrahiert einen einzelnen Artikel mithilfe des FUNDUS-Parsers.
+        Extrahiert einen einzelnen Artikel mithilfe des FUNDUS-Parsers.
 
-        Obwohl FUNDUS als generalisierbarer Crawler ausgelegt ist, kann durch
-        geschickte Nutzung eines inversen Regex-Filters erreicht werden, dass
-        ausschließlich *eine spezifische URL* extrahiert wird. Dies ermöglicht den
-        Einsatz als zielgerichteten Artikel-Extractor.
+        Hinweis:
+        Dieses Projekt verwendet FUNDUS hier *nicht* als Crawler. Stattdessen wird die
+        konkrete URL direkt abgerufen und anschließend mit dem passenden Publisher-Parser
+        verarbeitet.
 
         Ablauf:
         1. URL parsen → Publisher-Domain bestimmen
@@ -194,6 +195,7 @@ class ArticleExtractor:
         :return: Dict[str, Any]:
                 {
                     "success": bool,
+                    "input_type": "url",
                     "publisher": str | None,
                     "title": str | None,
                     "text": str | None,
@@ -301,18 +303,20 @@ class ArticleExtractor:
         Zentrale Einstiegsmethode für die Verarbeitung von Nutzereingaben.
 
         Diese Methode entscheidet, ob es sich bei der Eingabe um:
-        - eine reine URL zu einem Nachrichtenartikel oder
-        - um bereits vorliegenden Artikeltext
+        - eine reine URL zu einem Nachrichtenartikel,
+        - mehrere URLs (zeilenweise) oder
+        - bereits vorliegenden Artikeltext
 
         handelt und leitet entsprechend die weitere Verarbeitung ein.
 
         Ablauf:
         1. Prüfung, ob der Input ausschließlich aus einer URL besteht
         2. Falls URL: Extraktion über FUNDUS
-        3. Falls kein Link: Behandlung als Rohtext
-        4. Rückgabe eines einheitlichen Ergebnisobjekts
+        3. Falls mehrere URLs (zeilenweise): jede URL extrahieren und Texte kombinieren
+        4. Falls kein Link: Behandlung als Rohtext
+        5. Rückgabe eines einheitlichen Ergebnisobjekts
 
-        :param user_input: Eingabetext aus dem Frontend (URL oder Artikeltext)
+        :param user_input: Eingabetext aus dem Frontend (URL(s) oder Artikeltext)
         :return: Dict[str, Any]:
                 {
                     "success": bool,
@@ -338,7 +342,8 @@ class ArticleExtractor:
         lines = [line.strip() for line in user_input.splitlines() if line.strip()]
 
         # ---------------------------------------------------------
-        # Fall 1: Mehrere Zeilen → prüfen, ob alle Zeilen URLs sind und zum gleichen Publisher gehören
+        # Fall 1: Mehrere Zeilen → prüfen, ob alle Zeilen URLs sind
+        # (Hinweis: Der Code erzwingt aktuell NICHT, dass alle URLs zum selben Publisher gehören.)
         # ---------------------------------------------------------
         if len(lines) > 1 and all(self._is_pure_url(line) for line in lines):
             combined_text = []
@@ -387,10 +392,3 @@ class ArticleExtractor:
             "text": user_input,
             "error": None,
         }
-
-
-# Test Extraktion eines Artikels
-if __name__ == "__main__":
-    supported_languages = {"de", "en"}
-    extractor = ArticleExtractor(supported_languages)
-    print(extractor.process('https://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617.html\nhttps://www.golem.de/news/meinungsfreiheit-was-die-usa-am-dsa-nicht-verstehen-wollen-2512-203617-2.html'))
