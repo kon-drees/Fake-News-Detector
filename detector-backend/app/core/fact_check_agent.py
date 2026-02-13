@@ -1,4 +1,5 @@
-from pydantic_ai import Agent
+from ddgs.exceptions import DDGSException
+from pydantic_ai import Agent, ModelRetry
 from pydantic_ai.common_tools.duckduckgo import duckduckgo_search_tool
 from pydantic_ai.models import Model
 from pydantic_ai.models.openai import OpenAIResponsesModel
@@ -29,6 +30,7 @@ class FactCheckAgent:
             output_type=FactCheckResponse,
             tools=[duckduckgo_search_tool(max_results=12)],
             instructions=FactCheckAgent.load_instructions(),
+            retries=3
         )
 
     def load_model(self) -> Model:
@@ -60,6 +62,12 @@ class FactCheckAgent:
         Analyzes a given text for factual accuracy using an LLM agent.
         This method triggers an asynchronous call to OpenAI.
         """
-        result = await self.agent.run(text)
 
-        return result.output
+        try:
+            result = await self.agent.run(text)
+            return result.output
+        except DDGSException as e:
+            raise ModelRetry(
+                f"The search engine is temporarily unavailable (Error: {e}). "
+                "Please try one more time with a refined query or proceed with your internal knowledge."
+            )
