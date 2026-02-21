@@ -1,5 +1,8 @@
 <script>
+  // Import of API functionallity for prediction, highlight and fact-checking 
   import { predict, highlight, factCheck } from './lib/api.js';
+
+  // Import of helper functions
   import { 
     capitalizeFirstLetter, 
     getScoreColor, 
@@ -18,6 +21,7 @@
   let isAnalyzing = $state(false);
   let isFactChecking = $state(false);
 
+  // Storage vars for spi responses
   let predictRes = $state(null);
   let highlightRes = $state(null);
   let factCheckRes = $state(null);
@@ -27,6 +31,7 @@
   // Derived variables
   let score = $derived(predictRes?.prediction_result?.score ?? 0);
   
+  // Formating of the prediction label
   let predictionCategory = $derived(
     predictRes?.prediction_result?.label 
       ? capitalizeFirstLetter(predictRes.prediction_result.label)
@@ -35,6 +40,9 @@
 
   let isFakePrediction = $derived(predictionCategory === 'Fake');
 
+  // Helperfunctions
+
+  // Validates if the input has at least length of 10
   function validateInput() {
     if (text.length < 10) {
       error = 'Please input a text of minimum ten characters.';
@@ -43,6 +51,7 @@
     return true;
   }
 
+  // Triggers fact check through API-Call
   async function factcheck() {
     error = '';
     if (!validateInput()) return;
@@ -64,6 +73,7 @@
     }
   }
 
+  // Triggers analyzing (predict and optioanlly highlight) through API-Call
   async function analyze() {
     error = '';
     if (!validateInput()) return;
@@ -72,7 +82,7 @@
       factCheckRes = null;
     }
 
-    // Reset Analysis State
+    // Reset storage vars for next analyzation
     predictRes = null;
     highlightRes = null;
     showHighlights = wantsHighlights;
